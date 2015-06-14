@@ -77,7 +77,10 @@ class Expression():
         output = []
         
         # list of operators
-        oplist = ['+','-']
+        oplist = ['+','-','*','/','**']
+        preclist=[2,2,3,3,4]
+        assoclist=['L','L','L','L','R']
+        
         
         for token in tokens:
             if isnumber(token):
@@ -91,9 +94,14 @@ class Expression():
                 while True:
                     # TODO: when there are more operators, the rules are more complicated
                     # look up the shunting yard-algorithm
-                    if len(stack) == 0 or stack[-1] not in oplist:
+                    if len(stack) == 0 or stack[-1] not in oplist: #vanaf hier heb het ik het Shunting-Alg. aangepast (volgens wiki)
                         break
-                    output.append(stack.pop())
+                    z=oplist.index(token)
+                    x=oplist.index(stack[-1])
+                    if (assoclist[z]=='L' and preclist[z]<=preclist[x]) or (assoclist[z]=='R' and preclist[z]<preclist[x]):
+                        output.append(stack.pop())
+                    else:
+                        break
                 # push the new operator onto the stack
                 stack.append(token)
             elif token == '(':
@@ -109,6 +117,7 @@ class Expression():
             else:
                 # unknown token
                 raise ValueError('Unknown token: %s' % token)
+    
             
         # pop any tokens still on the stack to the output
         while len(stack) > 0:
@@ -126,7 +135,6 @@ class Expression():
                 stack.append(t)
         # the resulting expression tree is what's left on the stack
         return stack[0]
-    
 class Constant(Expression):
     """Represents a constant value"""
     def __init__(self, value):
@@ -189,5 +197,10 @@ class ExpNode(BinaryNode):
         super(ExpNode,self).__init__(lhs,rhs,'**')
 a=Constant(4)
 b=Constant(5)
-print(a*b)
+c=Constant(7)
+print(a+b*c)
+expr = Expression.fromString('1+2+3')
+print(expr)
 # TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
+print(Expression.fromString('7+8*2**3' )) # jeej! Hij zet de haakjes goed :)
+print(Expression.fromString('(3+4)*(5+7)'))
