@@ -123,6 +123,8 @@ class Expression():
         while len(stack) > 0:
             output.append(stack.pop())
         
+        return output[5]
+        
         # convert RPN to an actual expression tree
         for t in output:
             if t in oplist:
@@ -159,10 +161,13 @@ class Constant(Expression):
 class BinaryNode(Expression):
     """A node in the expression tree representing a binary operator."""
     
-    def __init__(self, lhs, rhs, op_symbol):
+    def __init__(self, lhs, rhs, op_symbol, prec, assoc):
         self.lhs = lhs
         self.rhs = rhs
         self.op_symbol = op_symbol
+        self.prec = prec
+        self.assoc = assoc
+        
     
     # TODO: what other properties could you need? Precedence, associativity, identity, etc.
             
@@ -182,25 +187,23 @@ class BinaryNode(Expression):
 class AddNode(BinaryNode):
     """Represents the addition operator"""
     def __init__(self, lhs, rhs):
-        super(AddNode, self).__init__(lhs, rhs, '+')
+        super(AddNode, self).__init__(lhs, rhs, '+',2,'L')
 class SubNode(BinaryNode):
     def __init__(self,lhs,rhs):
-        super(SubNode,self).__init__(lhs,rhs,'-')
+        super(SubNode,self).__init__(lhs,rhs,'-',2,'L')
 class MultNode(BinaryNode):
     def __init__(self,lhs,rhs):
-        super(MultNode,self).__init__(lhs,rhs,'*')
+        super(MultNode,self).__init__(lhs,rhs,'*',3,'L')
 class DivNode(BinaryNode):
     def __init__(self,lhs,rhs):
-        super(DivNode,self).__init__(lhs,rhs,'/')
+        super(DivNode,self).__init__(lhs,rhs,'/',3,'L')
 class ExpNode(BinaryNode):
     def __init__(self,lhs,rhs):
-        super(ExpNode,self).__init__(lhs,rhs,'**')
+        super(ExpNode,self).__init__(lhs,rhs,'**',4,'R')
 a=Constant(4)
 b=Constant(5)
 c=Constant(7)
 print(a+b*c)
-expr = Expression.fromString('1+2+3')
+expr = Expression.fromString('(4+(5*7))')
 print(expr)
 # TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
-print(Expression.fromString('7+8*2**3' )) # jeej! Hij zet de haakjes goed :)
-print(Expression.fromString('(3+4)*(5+7)'))
