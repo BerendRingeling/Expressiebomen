@@ -138,6 +138,7 @@ class Expression():
         return stack[0]
         
     #is zoiets een goed idee? Het is twaalf uur dus ik moet echt gaan slapen dus tja ik laat het hier maar bij...    
+<<<<<<< HEAD
 #    def BoomToRPN(expression):
 #        stack = []
 #        stack.append(expression.op_symbol)
@@ -149,6 +150,19 @@ class Expression():
 #            stack.append(expression.rhs)
 #        if type(expression.rhs) == BinaryNode:
 #            BoomToRPN(expression.rhs)
+=======
+    def BoomToRPN(expression):
+        stack = []
+        stack.append(expression.op_symbol)
+        if type(expression.lhs) == Constant:
+            stack.append(expression.lhs)
+        if type(expression.lhs) == BinaryNode:
+            BoomToRPN(expression.lhs)
+        if type(expression.rhs) == Constant:
+            stack.append(expression.rhs)
+        if type(expression.rhs) == BinaryNode:
+            BoomToRPN(expression.rhs)
+>>>>>>> 5da3916ca3b2bd680a78217bb715347444755a16
         
         
 class Constant(Expression):
