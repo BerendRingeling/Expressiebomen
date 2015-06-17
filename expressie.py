@@ -123,7 +123,6 @@ class Expression():
         while len(stack) > 0:
             output.append(stack.pop())
         
-        return output[5]
         
         # convert RPN to an actual expression tree
         for t in output:
