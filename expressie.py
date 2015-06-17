@@ -151,18 +151,7 @@ class Expression():
 #        if type(expression.rhs) == BinaryNode:
 #            BoomToRPN(expression.rhs)
 =======
-    def BoomToRPN(expression):
-        stack = []
-        stack.append(expression.op_symbol)
-        if type(expression.lhs) == Constant:
-            stack.append(expression.lhs)
-        if type(expression.lhs) == BinaryNode:
-            BoomToRPN(expression.lhs)
-        if type(expression.rhs) == Constant:
-            stack.append(expression.rhs)
-        if type(expression.rhs) == BinaryNode:
-            BoomToRPN(expression.rhs)
->>>>>>> 5da3916ca3b2bd680a78217bb715347444755a16
+
         
         
 class Constant(Expression):
