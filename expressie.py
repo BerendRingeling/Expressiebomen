@@ -136,11 +136,26 @@ class Expression():
                 stack.append(t)
         # the resulting expression tree is what's left on the stack
         return stack[0]
+        
+    #is zoiets een goed idee? Het is twaalf uur dus ik moet echt gaan slapen dus tja ik laat het hier maar bij...    
+#    def BoomToRPN(expression):
+#        stack = []
+#        stack.append(expression.op_symbol)
+#        if type(expression.lhs) == Constant:
+#            stack.append(expression.lhs)
+#        if type(expression.lhs) == BinaryNode:
+#            BoomToRPN(expression.lhs)
+#        if type(expression.rhs) == Constant:
+#            stack.append(expression.rhs)
+#        if type(expression.rhs) == BinaryNode:
+#            BoomToRPN(expression.rhs)
+        
+        
 class Constant(Expression):
     """Represents a constant value"""
-    def __init__(self, value):
+    def __init__(self, value, prec=1000):
         self.value = value
-        
+        self.prec = 1000 #dit heb ik moeten toevoegen, anders snapt __str__ van binarynode constanten niet
     def __eq__(self, other):
         if isinstance(other, Constant):
             return self.value == other.value
@@ -156,16 +171,28 @@ class Constant(Expression):
         
     def __float__(self):
         return float(self.value)
+class Variable(Expression):
+    """Represents a variable"""
+    
+    def __init__(self, symb, prec=1000):
+        self.symb = symb
+        self.prec = 1000
         
+    def __str__(self):
+        return self.symb
+        
+    def __eq__(self,other):
+        return self.symb==other.symb
 class BinaryNode(Expression):
     """A node in the expression tree representing a binary operator."""
     
-    def __init__(self, lhs, rhs, op_symbol, prec, assoc):
+    def __init__(self, lhs, rhs, op_symbol, prec, assoc_left,assoc_right):
         self.lhs = lhs
         self.rhs = rhs
         self.op_symbol = op_symbol
         self.prec = prec
-        self.assoc = assoc
+        self.assoc_left = assoc_left #hier heb ik een nieuw argument toegevoegd
+        self.assoc_right = assoc_right #hier heb ik een nieuw argument toegevoegd
         
     
     # TODO: what other properties could you need? Precedence, associativity, identity, etc.
@@ -179,30 +206,43 @@ class BinaryNode(Expression):
     def __str__(self):
         lstring = str(self.lhs)
         rstring = str(self.rhs)
-        
+        if (self.lhs.prec<self.prec) or (self.lhs.prec==self.prec and not self.lhs.assoc_left):#Doe haakjes om linkerkant immers bij de boom ((5*2)**5) moeten er haakjes om 5*2 in de string
+            #als bv ((3**4)**5) dan prec=prec_links maar links is niet linksasso dus doe haakjes om (3**4)
+            lstring = '('+lstring+')' #dit zorgt voor haakjes om lstring
+        if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.rhs.assoc_right):#Doe haakjes om rechterkant immers bij de boom (3*(2+3)) moeten er haakjes om 2+3 in de string
+            #als bv (2-(5-8)) dan prec=prec_rechts maar rechts is niet rechtsasso, dus doe haakjes om (5-8)
+            rstring = '('+rstring+')' #dit zorgt voor haakjes om rstring
         # TODO: do we always need parantheses?
-        return "(%s %s %s)" % (lstring, self.op_symbol, rstring)
+        return "%s %s %s" % (lstring, self.op_symbol, rstring) #Ik heb hier de haakjes om de %s weggehaald
         
 class AddNode(BinaryNode):
     """Represents the addition operator"""
     def __init__(self, lhs, rhs):
-        super(AddNode, self).__init__(lhs, rhs, '+',2,'L')
+        super(AddNode, self).__init__(lhs, rhs, '+',2,True,True)
 class SubNode(BinaryNode):
     def __init__(self,lhs,rhs):
-        super(SubNode,self).__init__(lhs,rhs,'-',2,'L')
+        super(SubNode,self).__init__(lhs,rhs,'-',2,True,False)
 class MultNode(BinaryNode):
     def __init__(self,lhs,rhs):
-        super(MultNode,self).__init__(lhs,rhs,'*',3,'L')
+        super(MultNode,self).__init__(lhs,rhs,'*',3,True,True)
 class DivNode(BinaryNode):
     def __init__(self,lhs,rhs):
-        super(DivNode,self).__init__(lhs,rhs,'/',3,'L')
+        super(DivNode,self).__init__(lhs,rhs,'/',3,True,False)
 class ExpNode(BinaryNode):
     def __init__(self,lhs,rhs):
-        super(ExpNode,self).__init__(lhs,rhs,'**',4,'R')
+        super(ExpNode,self).__init__(lhs,rhs,'**',4,False,True)
 a=Constant(4)
 b=Constant(5)
 c=Constant(7)
-print(a+b*c)
+d=Variable('d')
+e=Variable('d')
+print(a+b*(c+a))
+print((a+b)*(c+a))
+print(type(a+b*(c+a)))
 expr = Expression.fromString('(4+(5*7))')
 print(expr)
 # TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
+hallo='Dit is raar'
+print('Hallo Allemaal (%s)' % hallo)
+print(d==e)
+#Expression.fromString('1+2*d') #Dit geeft een error waarschijnlijk moeten we iets aan het ShuntingYald Alg. aanpassen
