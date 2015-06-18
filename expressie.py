@@ -168,6 +168,8 @@ class Constant(Expression):
         
     def __float__(self):
         return float(self.value)
+    def evaluate(self,dic={}):
+        return self.value
 class Variable(Expression):
     """Represents a variable"""
     
@@ -193,11 +195,11 @@ class BinaryNode(Expression):
         self.rhs = rhs
         self.op_symbol = op_symbol
         self.prec = prec
-        self.assoc_left = assoc_left #hier heb ik een nieuw argument toegevoegd
-        self.assoc_right = assoc_right #hier heb ik een nieuw argument toegevoegd
+        self.assoc_left = assoc_left 
+        self.assoc_right = assoc_right
         
     
-    # TODO: what other properties could you need? Precedence, associativity, identity, etc.
+    #TODO: propertie identity, etc.
             
     def __eq__(self, other):
         if type(self) == type(other):
@@ -214,8 +216,10 @@ class BinaryNode(Expression):
         if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.rhs.assoc_right):#Doe haakjes om rechterkant immers bij de boom (3*(2+3)) moeten er haakjes om 2+3 in de string
             #als bv (2-(5-8)) dan prec=prec_rechts maar rechts is niet rechtsasso, dus doe haakjes om (5-8)
             rstring = '('+rstring+')' #dit zorgt voor haakjes om rstring
-        # TODO: do we always need parantheses?
-        return "%s %s %s" % (lstring, self.op_symbol, rstring) #Ik heb hier de haakjes om de %s weggehaald
+        return "%s %s %s" % (lstring, self.op_symbol, rstring)
+        
+
+
         
 class AddNode(BinaryNode):
     """Represents the addition operator"""
@@ -233,6 +237,9 @@ class DivNode(BinaryNode):
 class ExpNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(ExpNode,self).__init__(lhs,rhs,'**',4,False,True)
+
+
+#testomgeving 
 a=Constant(4)
 b=Constant(5)
 c=Constant(7)
@@ -253,3 +260,17 @@ print(Expression.fromString('1+(2*d)')) #Dit geeft een error waarschijnlijk moet
 # ik snap het stukje van eval niet echt volgens mij, waarom staat dat in het shunting alg? en misschien zit daar ook het probleem van de error?
 g = Variable('g')
 print(g)
+
+print(Expression.fromString('(4+(5*7))') == Expression.fromString('((5*7)+4)'))
+g=(a*d)+b
+h=str(g)
+print(h)
+d=2
+eval(h)
+print(eval(h))
+k=a+b*d
+
+# print(Expression.evaluate(k,{d:4}))
+expre=Expression.fromString('2+3')
+
+print(a.evaluate())
