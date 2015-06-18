@@ -39,6 +39,18 @@ def isint(string):
         return True
     except ValueError:
         return False
+        
+# check if a string represents a variable
+# dit werkt nog niet, want hij geeft bij alles dat hij er wel een variabele van kan maken ;)
+def isvar(string):
+    try:
+        Variable(string)
+        return True and not isnumber(string) and not string in ['+', '-', '*', '/', '**','(',')']
+    except ValueError:
+        return False
+# zo met dit gekke lange statement geeft hij alleen bij letters wat we willen, misschien is het goed zo? Maar niet zo'n elegante oplossing. 
+# misschien kunnen we al die voorwaardes weglaten als we de if statements in het shunting alg goed plaatsen.
+        
 
 class Expression():
     """A mathematical expression, represented as an expression tree"""
@@ -62,10 +74,8 @@ class Expression():
         return DivNode(self,other)
     def __pow__(self,other):
         return ExpNode(self,other)
-        
-    # TODO: other overloads, such as __sub__, __mul__, etc.
     
-    # basic Shunting-yard algorithm
+    #Shunting-yard algorithm
     def fromString(string):
         # split into tokens
         tokens = tokenize(string)
@@ -89,12 +99,13 @@ class Expression():
                     output.append(Constant(int(token)))
                 else:
                     output.append(Constant(float(token)))
+            elif isvar(token): # dit stukje toegevoegd
+                # variables go directly to output as well
+                output.append(Variable(token))
             elif token in oplist:
                 # pop operators from the stack to the output until the top is no longer an operator
                 while True:
-                    # TODO: when there are more operators, the rules are more complicated
-                    # look up the shunting yard-algorithm
-                    if len(stack) == 0 or stack[-1] not in oplist: #vanaf hier heb het ik het Shunting-Alg. aangepast (volgens wiki)
+                    if len(stack) == 0 or stack[-1] not in oplist:
                         break
                     z=oplist.index(token)
                     x=oplist.index(stack[-1])
@@ -113,7 +124,6 @@ class Expression():
                     output.append(stack.pop())
                 # pop the left paranthesis from the stack (but not to the output)
                 stack.pop()
-            # TODO: do we need more kinds of tokens?
             else:
                 z=Variable(token)
                 output.append(z)# unknown token
@@ -141,28 +151,13 @@ class Expression():
         # the resulting expression tree is what's left on the stack
         return stack[0]
         
-    #is zoiets een goed idee? Het is twaalf uur dus ik moet echt gaan slapen dus tja ik laat het hier maar bij...    
 
-#    def BoomToRPN(expression):
-#        stack = []
-#        stack.append(expression.op_symbol)
-#        if type(expression.lhs) == Constant:
-#            stack.append(expression.lhs)
-#        if type(expression.lhs) == BinaryNode:
-#            BoomToRPN(expression.lhs)
-#        if type(expression.rhs) == Constant:
-#            stack.append(expression.rhs)
-#        if type(expression.rhs) == BinaryNode:
-#            BoomToRPN(expression.rhs)
-
-
-        
         
 class Constant(Expression):
     """Represents a constant value"""
     def __init__(self, value, prec=1000):
         self.value = value
-        self.prec = 1000 #dit heb ik moeten toevoegen, anders snapt __str__ van binarynode constanten niet
+        self.prec = 1000
     def __eq__(self, other):
         if isinstance(other, Constant):
             return self.value == other.value
@@ -178,6 +173,8 @@ class Constant(Expression):
         
     def __float__(self):
         return float(self.value)
+    def evaluate(self,dic={}):
+        return self.value
 class Variable(Expression):
     """Represents a variable"""
     
@@ -189,7 +186,13 @@ class Variable(Expression):
         return self.symb
         
     def __eq__(self,other):
-        return self.symb==other.symb
+        if isinstance(other, Variable):
+            return self.symb == other.symb
+        else:
+            return False
+    def evaluate(self,dic={}):
+        return dic[self.symb]
+
 class BinaryNode(Expression):
     """A node in the expression tree representing a binary operator."""
     
@@ -198,11 +201,11 @@ class BinaryNode(Expression):
         self.rhs = rhs
         self.op_symbol = op_symbol
         self.prec = prec
-        self.assoc_left = assoc_left #hier heb ik een nieuw argument toegevoegd
-        self.assoc_right = assoc_right #hier heb ik een nieuw argument toegevoegd
+        self.assoc_left = assoc_left 
+        self.assoc_right = assoc_right
         
     
-    # TODO: what other properties could you need? Precedence, associativity, identity, etc.
+    #TODO: propertie identity, etc.
             
     def __eq__(self, other):
         if type(self) == type(other):
@@ -219,8 +222,21 @@ class BinaryNode(Expression):
         if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.rhs.assoc_right):#Doe haakjes om rechterkant immers bij de boom (3*(2+3)) moeten er haakjes om 2+3 in de string
             #als bv (2-(5-8)) dan prec=prec_rechts maar rechts is niet rechtsasso, dus doe haakjes om (5-8)
             rstring = '('+rstring+')' #dit zorgt voor haakjes om rstring
-        # TODO: do we always need parantheses?
-        return "%s %s %s" % (lstring, self.op_symbol, rstring) #Ik heb hier de haakjes om de %s weggehaald
+        return "%s %s %s" % (lstring, self.op_symbol, rstring)
+    def evaluate(self, dic={}):
+        if self.op_symbol == '+':
+            return self.lhs.evaluate(dic)+self.rhs.evaluate(dic)
+        elif self.op_symbol == '-':
+            return self.lhs.evaluate(dic)-self.rhs.evaluate(dic)
+        elif self.op_symbol == '*':
+            return self.lhs.evaluate(dic)*self.rhs.evaluate(dic)
+        elif self.op_symbol == '/':
+            return self.lhs.evaluate(dic)/self.rhs.evaluate(dic)
+        elif self.op_symbol == '**':
+            return self.lhs.evaluate(dic)**self.rhs.evaluate(dic)
+        
+
+
         
 class AddNode(BinaryNode):
     """Represents the addition operator"""
@@ -238,6 +254,9 @@ class DivNode(BinaryNode):
 class ExpNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(ExpNode,self).__init__(lhs,rhs,'**',4,False,True)
+
+
+#testomgeving 
 a=Constant(4)
 b=Constant(5)
 c=Constant(7)
@@ -246,11 +265,30 @@ print(e)
 print(a+b*(c+a))
 print((a+b)*(c+a))
 print(type(a+b*(c+a)))
-expr = Expression.fromString('(4+(5*7))')
+expr = Expression.fromString('(4+(5*7))') # omdat we nu de print overschreven hebben kunnen we nooit meer de boomstr. printen, is dat niet onhandig?
 print(expr)
 # TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
 hallo='Dit is raar'
 print('Hallo Allemaal (%s)' % hallo)
 
-#print(y)
-print(eval(str(a+b)))
+
+
+
+#print(eval('3 + d'))
+# ik snap het stukje van eval niet echt volgens mij, waarom staat dat in het shunting alg? en misschien zit daar ook het probleem van de error?
+g = Variable('g')
+print(g)
+
+print(Expression.fromString('(4+(5*7))') == Expression.fromString('((5*7)+4)'))
+# g=(a*d)+b
+# h=str(g)
+# print(h)
+# d=2
+# eval(h)
+# print(eval(h))
+# k=a+b*d
+
+# print(Expression.evaluate(k,{d:4}))
+expre=Expression.fromString('2+3*y+x**2')
+
+print(expre.evaluate({'x':2,'y':3}))
