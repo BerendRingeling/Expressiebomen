@@ -115,8 +115,12 @@ class Expression():
                 stack.pop()
             # TODO: do we need more kinds of tokens?
             else:
-                # unknown token
-                raise ValueError('Unknown token: %s' % token)
+                z=Variable(token)
+                output.append(z)# unknown token
+                print(z)
+                
+#                raise ValueError('Unknown token: %s' % token)
+
     
             
         # pop any tokens still on the stack to the output
@@ -138,7 +142,7 @@ class Expression():
         return stack[0]
         
     #is zoiets een goed idee? Het is twaalf uur dus ik moet echt gaan slapen dus tja ik laat het hier maar bij...    
-<<<<<<< HEAD
+
 #    def BoomToRPN(expression):
 #        stack = []
 #        stack.append(expression.op_symbol)
@@ -150,7 +154,7 @@ class Expression():
 #            stack.append(expression.rhs)
 #        if type(expression.rhs) == BinaryNode:
 #            BoomToRPN(expression.rhs)
-=======
+
 
         
         
@@ -237,8 +241,8 @@ class ExpNode(BinaryNode):
 a=Constant(4)
 b=Constant(5)
 c=Constant(7)
-d=Variable('d')
-e=Variable('d')
+e=Variable('x')
+print(e)
 print(a+b*(c+a))
 print((a+b)*(c+a))
 print(type(a+b*(c+a)))
@@ -247,5 +251,6 @@ print(expr)
 # TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
 hallo='Dit is raar'
 print('Hallo Allemaal (%s)' % hallo)
-print(d==e)
-#Expression.fromString('1+2*d') #Dit geeft een error waarschijnlijk moeten we iets aan het ShuntingYald Alg. aanpassen
+
+#print(y)
+print(eval(str(a+b)))
