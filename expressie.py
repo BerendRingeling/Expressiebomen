@@ -39,6 +39,18 @@ def isint(string):
         return True
     except ValueError:
         return False
+        
+# check if a string represents a variable
+# dit werkt nog niet, want hij geeft bij alles dat hij er wel een variabele van kan maken ;)
+def isvar(string):
+    try:
+        Variable(string)
+        return True and not isnumber(string) and not string in ['+', '-', '*', '/', '**','(',')']
+    except ValueError:
+        return False
+# zo met dit gekke lange statement geeft hij alleen bij letters wat we willen, misschien is het goed zo? Maar niet zo'n elegante oplossing. 
+# misschien kunnen we al die voorwaardes weglaten als we de if statements in het shunting alg goed plaatsen.
+        
 
 class Expression():
     """A mathematical expression, represented as an expression tree"""
@@ -62,10 +74,8 @@ class Expression():
         return DivNode(self,other)
     def __pow__(self,other):
         return ExpNode(self,other)
-        
-    # TODO: other overloads, such as __sub__, __mul__, etc.
     
-    # basic Shunting-yard algorithm
+    #Shunting-yard algorithm
     def fromString(string):
         # split into tokens
         tokens = tokenize(string)
@@ -89,12 +99,13 @@ class Expression():
                     output.append(Constant(int(token)))
                 else:
                     output.append(Constant(float(token)))
+            elif isvar(token): # dit stukje toegevoegd
+                # variables go directly to output as well
+                output.append(Variable(token))
             elif token in oplist:
                 # pop operators from the stack to the output until the top is no longer an operator
                 while True:
-                    # TODO: when there are more operators, the rules are more complicated
-                    # look up the shunting yard-algorithm
-                    if len(stack) == 0 or stack[-1] not in oplist: #vanaf hier heb het ik het Shunting-Alg. aangepast (volgens wiki)
+                    if len(stack) == 0 or stack[-1] not in oplist:
                         break
                     z=oplist.index(token)
                     x=oplist.index(stack[-1])
@@ -113,7 +124,6 @@ class Expression():
                     output.append(stack.pop())
                 # pop the left paranthesis from the stack (but not to the output)
                 stack.pop()
-            # TODO: do we need more kinds of tokens?
             else:
                 # unknown token
                 raise ValueError('Unknown token: %s' % token)
@@ -137,28 +147,12 @@ class Expression():
         # the resulting expression tree is what's left on the stack
         return stack[0]
         
-    #is zoiets een goed idee? Het is twaalf uur dus ik moet echt gaan slapen dus tja ik laat het hier maar bij...    
-<<<<<<< HEAD
-#    def BoomToRPN(expression):
-#        stack = []
-#        stack.append(expression.op_symbol)
-#        if type(expression.lhs) == Constant:
-#            stack.append(expression.lhs)
-#        if type(expression.lhs) == BinaryNode:
-#            BoomToRPN(expression.lhs)
-#        if type(expression.rhs) == Constant:
-#            stack.append(expression.rhs)
-#        if type(expression.rhs) == BinaryNode:
-#            BoomToRPN(expression.rhs)
-=======
-
-        
         
 class Constant(Expression):
     """Represents a constant value"""
     def __init__(self, value, prec=1000):
         self.value = value
-        self.prec = 1000 #dit heb ik moeten toevoegen, anders snapt __str__ van binarynode constanten niet
+        self.prec = 1000
     def __eq__(self, other):
         if isinstance(other, Constant):
             return self.value == other.value
@@ -185,7 +179,12 @@ class Variable(Expression):
         return self.symb
         
     def __eq__(self,other):
-        return self.symb==other.symb
+        if isinstance(other, Variable):
+            return self.symb == other.symb
+        else:
+            return False
+        
+
 class BinaryNode(Expression):
     """A node in the expression tree representing a binary operator."""
     
@@ -242,10 +241,15 @@ e=Variable('d')
 print(a+b*(c+a))
 print((a+b)*(c+a))
 print(type(a+b*(c+a)))
-expr = Expression.fromString('(4+(5*7))')
+expr = Expression.fromString('(4+(5*7))') # omdat we nu de print overschreven hebben kunnen we nooit meer de boomstr. printen, is dat niet onhandig?
 print(expr)
 # TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
 hallo='Dit is raar'
 print('Hallo Allemaal (%s)' % hallo)
 print(d==e)
-#Expression.fromString('1+2*d') #Dit geeft een error waarschijnlijk moeten we iets aan het ShuntingYald Alg. aanpassen
+print(Expression.fromString('1+(2*d)')) #Dit geeft een error waarschijnlijk moeten we iets aan het ShuntingYald Alg. aanpassen
+
+#print(eval('3 + d'))
+# ik snap het stukje van eval niet echt volgens mij, waarom staat dat in het shunting alg? en misschien zit daar ook het probleem van de error?
+g = Variable('g')
+print(g)
