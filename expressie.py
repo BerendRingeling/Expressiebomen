@@ -191,7 +191,10 @@ class Variable(Expression):
         else:
             return False
     def evaluate(self,dic={}):
-        return dic[self.symb]
+        if self.symb in dic:
+            return dic[self.symb]
+        else:
+            return self.symb
 
 class BinaryNode(Expression):
     """A node in the expression tree representing a binary operator."""
@@ -223,21 +226,22 @@ class BinaryNode(Expression):
             #als bv (2-(5-8)) dan prec=prec_rechts maar rechts is niet rechtsasso, dus doe haakjes om (5-8)
             rstring = '('+rstring+')' #dit zorgt voor haakjes om rstring
         return "%s %s %s" % (lstring, self.op_symbol, rstring)
-    def evaluate(self, dic={}):
-        if self.op_symbol == '+':
-            return self.lhs.evaluate(dic)+self.rhs.evaluate(dic)
-        elif self.op_symbol == '-':
-            return self.lhs.evaluate(dic)-self.rhs.evaluate(dic)
-        elif self.op_symbol == '*':
-            return self.lhs.evaluate(dic)*self.rhs.evaluate(dic)
-        elif self.op_symbol == '/':
-            return self.lhs.evaluate(dic)/self.rhs.evaluate(dic)
-        elif self.op_symbol == '**':
-            return self.lhs.evaluate(dic)**self.rhs.evaluate(dic)
+    def evaluate(self, dic={}): #evaluatiefunctie
+        if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): #als de evaluatie geen string is laat het algoritme zijn ding doen
+            if self.op_symbol == '+':
+                return self.lhs.evaluate(dic)+self.rhs.evaluate(dic)
+            elif self.op_symbol == '-':
+                return self.lhs.evaluate(dic)-self.rhs.evaluate(dic)
+            elif self.op_symbol == '*':
+                return self.lhs.evaluate(dic)*self.rhs.evaluate(dic)
+            elif self.op_symbol == '/':
+                return self.lhs.evaluate(dic)/self.rhs.evaluate(dic)
+            elif self.op_symbol == '**':
+                return self.lhs.evaluate(dic)**self.rhs.evaluate(dic)
+        elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str): #als de evaluatie een string blijft (het is dus een variabele zonder waarde toegekend) laat het dan een boom
+            return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
         
 
-
-        
 class AddNode(BinaryNode):
     """Represents the addition operator"""
     def __init__(self, lhs, rhs):
@@ -279,7 +283,7 @@ print('Hallo Allemaal (%s)' % hallo)
 g = Variable('g')
 print(g)
 
-print(Expression.fromString('(4+(5*7))') == Expression.fromString('((5*7)+4)'))
+print(Expression.fromString('4+5*7') == Expression.fromString('5*7+4'))
 # g=(a*d)+b
 # h=str(g)
 # print(h)
@@ -289,6 +293,7 @@ print(Expression.fromString('(4+(5*7))') == Expression.fromString('((5*7)+4)'))
 # k=a+b*d
 
 # print(Expression.evaluate(k,{d:4}))
-expre=Expression.fromString('2+3*y+x**2')
+expre=Expression.fromString('2+3*y*z+z**2') #volgens mij werkt het naar behoren
+print(type(expre))
 
-print(expre.evaluate({'x':2,'y':3}))
+print(expre.evaluate({'y':2}))
