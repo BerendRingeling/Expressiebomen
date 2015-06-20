@@ -213,7 +213,7 @@ class Variable(Expression):
         if variable == 'Matrix':
             return self.derivative(self.symb) # voor nu is dit ok
         else:
-            if self.symb == variable: #we voegen hier gelijk een notie van partiele afgeleide in, als we differentieren naar x dan is de afgeleide naar y 0
+            if self.symb == variable: #we voegen hier gelijk een notie van partiele afgeleide in, als we differentieren naar x dan is de afgeleide van y 0
                 return Constant(1)
             else:
                 return Constant(0)
@@ -247,25 +247,31 @@ class BinaryNode(Expression):
         if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.rhs.assoc_right):#Doe haakjes om rechterkant immers bij de boom (3*(2+3)) moeten er haakjes om 2+3 in de string
             #als bv (2-(5-8)) dan prec=prec_rechts maar rechts is niet rechtsasso, dus doe haakjes om (5-8)
             rstring = '('+rstring+')' #dit zorgt voor haakjes om rstring
-        # wat kleine versimpelingen
-        if type(self.lhs) == Constant and type(self.rhs) == Constant: #hij print nu i.p.v. 1+1 2
-            return str(Constant(self.evaluate()))
-        if self.op_symbol == '+':
-            if self.lhs == Constant(0):
-                return str(self.rhs)
-            if self.rhs == Constant(0):
-                return str(self.lhs)
-        if self.op_symbol == '*':
-            if self.lhs == Constant(0) or self.rhs == Constant(0):
-                return str(Constant(0))
+        #return "%s %s %s" % (lstring, self.op_symbol, rstring)# moet als laatste
+        
+
+        # if self.op_symbol == '+':
+        #     if self.lhs == Constant(0):
+        #          return str(self.rhs)
+        #     elif self.rhs == Constant(0):
+        #          return str(self.lhs)
+        #     else:
+        #         return "%s %s %s" % (lstring, self.op_symbol, rstring)
+        # elif self.op_symbol == '*':
+        #     if self.lhs == Constant(0) or self.rhs == Constant(0):
+        #         return str(Constant(0))
+        #     if self.lhs == Constant(1):
+        #         return str(self.rhs)
+        #     elif self.rhs == Constant(1):
+        #         return str(self.lhs)
+        return "%s %s %s" % (lstring, self.op_symbol, rstring)
+        
                 
                 
                 
                 
                 
-                
-                
-        return "%s %s %s" % (lstring, self.op_symbol, rstring) # deze moet altijd onderaan !!
+
     
     def evaluate(self, dic={}): #evaluatiefunctie
         if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): #als de evaluatie geen string is laat het algoritme zijn ding doen
@@ -297,6 +303,13 @@ class AddNode(BinaryNode):
         
     def derivative(self,variable='Matrix'):
         return self.lhs.derivative(variable)+self.rhs.derivative(variable) 
+    # def MakeMoreSimple(self):
+    #     if self.lhs == Constant(0):
+    #         return self.rhs.MakeMoreSimple()
+    #     if self.rhs == Constant(0):
+    #         return self.lhs.MakeMoreSimple()
+    #     else:
+    #         return "%s %s %s" % (self.lhs.MakeMoresimple, self.op_symbol, self.rhs.MakeMoreSimple)
     
 class SubNode(BinaryNode):
     def __init__(self,lhs,rhs):
@@ -310,6 +323,12 @@ class MultNode(BinaryNode):
         
     def derivative(self,variable='Matrix'):
         return self.lhs.derivative(variable)*self.rhs+self.lhs*self.rhs.derivative(variable) 
+        
+    # def MakeMoreSimple(self):
+    #     if self.lhs == Constant(0) or self.rhs == Constant(0):
+    #         return str(Constant(0))
+    #     else:
+    #         return "%s %s %s" % (self.lhs.MakeMoresimple, self.op_symbol, self.rhs.MakeMoreSimple)
 class DivNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(DivNode,self).__init__(lhs,rhs,'/',3,True,False)
@@ -336,7 +355,6 @@ print(expr)
 # TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
 hallo='Dit is raar'
 print('Hallo Allemaal (%s)' % hallo)
-print(expr.derivative())
 
 
 
@@ -366,3 +384,7 @@ f=e+e
 a=expre.derivative('y')#Jeej het werkt
 print(type(a))
 print(a)
+print(expr.evaluate())
+x=Constant(0)
+y=Constant(3)
+print((x+y)*g)
