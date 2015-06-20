@@ -42,15 +42,20 @@ def isint(string):
         
 # check if a string represents a variable
 # dit werkt nog niet, want hij geeft bij alles dat hij er wel een variabele van kan maken ;)
+# ListOfVariables=[]
 def isvar(string):
     try:
         Variable(string)
-        return True and not isnumber(string) and not string in ['+', '-', '*', '/', '**','(',')']
+        Value = True and not isnumber(string) and not string in ['+', '-', '*', '/', '**','(',')']
+        # if Value == True:
+        #     ListOfVariables.append(str(Variable(string)))
+        return Value
     except ValueError:
         return False
 # zo met dit gekke lange statement geeft hij alleen bij letters wat we willen, misschien is het goed zo? Maar niet zo'n elegante oplossing. 
 # misschien kunnen we al die voorwaardes weglaten als we de if statements in het shunting alg goed plaatsen.
-        
+  
+
 
 class Expression():
     """A mathematical expression, represented as an expression tree"""
@@ -151,7 +156,12 @@ class Expression():
         # the resulting expression tree is what's left on the stack
         return stack[0]
         
-
+# def Totalderivative(function):
+#     verz=set([])
+#     i=0
+#     while i<len(ListOfVariables):
+#         verz.add(function.derivative(ListOfVariables[i]))
+#     return verz
         
 class Constant(Expression):
     """Represents a constant value"""
@@ -173,8 +183,12 @@ class Constant(Expression):
         
     def __float__(self):
         return float(self.value)
+    
     def evaluate(self,dic={}):
         return self.value
+    
+    def derivative(self, variable = 'Matrix'): #afgeleide van constante is 0
+        return Constant(0)
 class Variable(Expression):
     """Represents a variable"""
     
@@ -195,6 +209,14 @@ class Variable(Expression):
             return dic[self.symb]
         else:
             return self.symb
+    def derivative(self, variable = 'Matrix'):
+        if variable == 'Matrix':
+            return self.derivative(self.symb) # voor nu is dit ok
+        else:
+            if self.symb == variable: #we voegen hier gelijk een notie van partiele afgeleide in, als we differentieren naar x dan is de afgeleide naar y 0
+                return Constant(1)
+            else:
+                return Constant(0)
 
 class BinaryNode(Expression):
     """A node in the expression tree representing a binary operator."""
@@ -225,39 +247,79 @@ class BinaryNode(Expression):
         if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.rhs.assoc_right):#Doe haakjes om rechterkant immers bij de boom (3*(2+3)) moeten er haakjes om 2+3 in de string
             #als bv (2-(5-8)) dan prec=prec_rechts maar rechts is niet rechtsasso, dus doe haakjes om (5-8)
             rstring = '('+rstring+')' #dit zorgt voor haakjes om rstring
-        return "%s %s %s" % (lstring, self.op_symbol, rstring)
+        # wat kleine versimpelingen
+        if type(self.lhs) == Constant and type(self.rhs) == Constant: #hij print nu i.p.v. 1+1 2
+            return str(Constant(self.evaluate()))
+        if self.op_symbol == '+':
+            if self.lhs == Constant(0):
+                return str(self.rhs)
+            if self.rhs == Constant(0):
+                return str(self.lhs)
+        if self.op_symbol == '*':
+            if self.lhs == Constant(0) or self.rhs == Constant(0):
+                return str(Constant(0))
+                
+                
+                
+                
+                
+                
+                
+        return "%s %s %s" % (lstring, self.op_symbol, rstring) # deze moet altijd onderaan !!
+    
     def evaluate(self, dic={}): #evaluatiefunctie
         if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): #als de evaluatie geen string is laat het algoritme zijn ding doen
+        
             if self.op_symbol == '+':
                 return self.lhs.evaluate(dic)+self.rhs.evaluate(dic)
+        
             elif self.op_symbol == '-':
                 return self.lhs.evaluate(dic)-self.rhs.evaluate(dic)
+        
             elif self.op_symbol == '*':
                 return self.lhs.evaluate(dic)*self.rhs.evaluate(dic)
+        
             elif self.op_symbol == '/':
                 return self.lhs.evaluate(dic)/self.rhs.evaluate(dic)
+        
             elif self.op_symbol == '**':
                 return self.lhs.evaluate(dic)**self.rhs.evaluate(dic)
+    
         elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str): #als de evaluatie een string blijft (het is dus een variabele zonder waarde toegekend) laat het dan een boom
             return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
         
-
+#def Totalderivative(function):
+    
 class AddNode(BinaryNode):
     """Represents the addition operator"""
     def __init__(self, lhs, rhs):
         super(AddNode, self).__init__(lhs, rhs, '+',2,True,True)
+        
+    def derivative(self,variable='Matrix'):
+        return self.lhs.derivative(variable)+self.rhs.derivative(variable) 
+    
 class SubNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(SubNode,self).__init__(lhs,rhs,'-',2,True,False)
+        
+    def derivative(self,variable='Matrix'):
+        return self.lhs.derivative(variable)-self.rhs.derivative(variable) 
 class MultNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(MultNode,self).__init__(lhs,rhs,'*',3,True,True)
+        
+    def derivative(self,variable='Matrix'):
+        return self.lhs.derivative(variable)*self.rhs+self.lhs*self.rhs.derivative(variable) 
 class DivNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(DivNode,self).__init__(lhs,rhs,'/',3,True,False)
+        
+    def derivative(self,variable='Matrix'):
+        return (self.lhs.derivative(variable)*self.rhs-self.lhs*self.rhs.derivative(variable))/(self.rhs*self.rhs) 
 class ExpNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(ExpNode,self).__init__(lhs,rhs,'**',4,False,True)
+        #hiervan werkt de derivative nog niet, we hebben immers Ln nodig
 
 
 #testomgeving 
@@ -274,6 +336,7 @@ print(expr)
 # TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
 hallo='Dit is raar'
 print('Hallo Allemaal (%s)' % hallo)
+print(expr.derivative())
 
 
 
@@ -281,7 +344,8 @@ print('Hallo Allemaal (%s)' % hallo)
 #print(eval('3 + d'))
 # ik snap het stukje van eval niet echt volgens mij, waarom staat dat in het shunting alg? en misschien zit daar ook het probleem van de error?
 g = Variable('g')
-print(g)
+der=g.derivative()
+print(der)
 
 print(Expression.fromString('4+5*7') == Expression.fromString('5*7+4'))
 # g=(a*d)+b
@@ -293,7 +357,12 @@ print(Expression.fromString('4+5*7') == Expression.fromString('5*7+4'))
 # k=a+b*d
 
 # print(Expression.evaluate(k,{d:4}))
-expre=Expression.fromString('2+3*y*z+z**2') #volgens mij werkt het naar behoren
+expre=Expression.fromString('2+3*y*z+z*z') #volgens mij werkt het naar behoren
+
 print(type(expre))
 
 print(expre.evaluate({'y':2}))
+f=e+e
+a=expre.derivative('y')#Jeej het werkt
+print(type(a))
+print(a)
