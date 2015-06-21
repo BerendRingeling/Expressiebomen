@@ -130,11 +130,7 @@ class Expression():
                 # pop the left paranthesis from the stack (but not to the output)
                 stack.pop()
             else:
-                z=Variable(token)
-                output.append(z)# unknown token
-                print(z)
-                
-#                raise ValueError('Unknown token: %s' % token)
+                raise ValueError('Unknown token: %s' % token)
 
     
             
