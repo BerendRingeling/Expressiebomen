@@ -274,33 +274,18 @@ class BinaryNode(Expression):
         return "%s %s %s" % (lstring, self.op_symbol, rstring)
         
                 
-                
-    def evaluate(self, dic={}): #evaluatiefunctie, volgens mij hebben we gelijk partial evaluate te pakken XD
-        if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): #als de evaluatie geen string is laat het algoritme zijn ding doen
-        
-            if self.op_symbol == '+':
-                return self.lhs.evaluate(dic)+self.rhs.evaluate(dic)
-        
-            elif self.op_symbol == '-':
-                return self.lhs.evaluate(dic)-self.rhs.evaluate(dic)
-        
-            elif self.op_symbol == '*':
-                return self.lhs.evaluate(dic)*self.rhs.evaluate(dic)
-        
-            elif self.op_symbol == '/':
-                return self.lhs.evaluate(dic)/self.rhs.evaluate(dic)
-        
-            elif self.op_symbol == '**':
-                return self.lhs.evaluate(dic)**self.rhs.evaluate(dic)
-    
-        elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str): #als de evaluatie een string blijft (het is dus een variabele zonder waarde toegekend) laat het dan een boom
-            return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
-        
 
 class AddNode(BinaryNode):
     """Represents the addition operator"""
     def __init__(self, lhs, rhs):
         super(AddNode, self).__init__(lhs, rhs, '+',2,True,True)
+        
+    def evaluate(self, dic={}): 
+        if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): 
+            return self.lhs.evaluate(dic)+self.rhs.evaluate(dic) # spreekt redelijk voor zich lijkt me
+    
+        elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str): # dit zorgt voor partial evaluate
+            return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
         
     def derivative(self,variable='Matrix'):
         return self.lhs.derivative(variable)+self.rhs.derivative(variable) 
@@ -312,6 +297,13 @@ class SubNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(SubNode,self).__init__(lhs,rhs,'-',2,True,False)
         
+    def evaluate(self, dic={}): 
+        if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): 
+            return self.lhs.evaluate(dic)-self.rhs.evaluate(dic)       
+    
+        elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str):
+            return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
+        
     def derivative(self,variable='Matrix'):
         return self.lhs.derivative(variable)-self.rhs.derivative(variable) 
         
@@ -320,6 +312,13 @@ class SubNode(BinaryNode):
 class MultNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(MultNode,self).__init__(lhs,rhs,'*',3,True,True)
+        
+    def evaluate(self, dic={}): 
+        if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): 
+            return self.lhs.evaluate(dic)*self.rhs.evaluate(dic)       
+    
+        elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str):
+            return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
         
     def derivative(self,variable='Matrix'):
         return self.lhs.derivative(variable)*self.rhs+self.lhs*self.rhs.derivative(variable) 
@@ -334,6 +333,14 @@ class MultNode(BinaryNode):
 class DivNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(DivNode,self).__init__(lhs,rhs,'/',3,True,False)
+
+    def evaluate(self, dic={}): 
+        if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): 
+            return self.lhs.evaluate(dic)/self.rhs.evaluate(dic)       
+    
+        elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str):
+            return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
+        
         
     def derivative(self,variable='Matrix'):
         return (self.lhs.derivative(variable)*self.rhs-self.lhs*self.rhs.derivative(variable))/(self.rhs*self.rhs) 
@@ -342,6 +349,13 @@ class ExpNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(ExpNode,self).__init__(lhs,rhs,'**',4,False,True)
         #hiervan werkt de derivative nog niet, we hebben immers Ln nodig
+    def evaluate(self, dic={}): 
+        if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): 
+            return self.lhs.evaluate(dic)**self.rhs.evaluate(dic)       
+    
+        elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str):
+            return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
+        
     def primitive(self,variable):
         if type(self.rhs) == Constant:
             return (Constant(1)/(self.rhs+Constant(1)))*Variable(variable)*self
@@ -418,5 +432,6 @@ print(g.primitive('g'))
 polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
 P=polynoom.primitive('x') # yess! dit werkt ook
 print(P.evaluate({'x':1}))
+print(P.evaluate())
 
 print(TestFundThmOfCalculus(polynoom,'x'))
