@@ -156,13 +156,7 @@ class Expression():
         # the resulting expression tree is what's left on the stack
         return stack[0]
         
-# def Totalderivative(function):
-#     verz=set([])
-#     i=0
-#     while i<len(ListOfVariables):
-#         verz.add(function.derivative(ListOfVariables[i]))
-#     return verz
-        
+
 class Constant(Expression):
     """Represents a constant value"""
     def __init__(self, value, prec=1000):
@@ -189,6 +183,10 @@ class Constant(Expression):
     
     def derivative(self, variable = 'Matrix'): #afgeleide van constante is 0
         return Constant(0)
+        
+    def primitive(self, variable):
+        return self*Variable(variable)
+        
 class Variable(Expression):
     """Represents a variable"""
     
@@ -204,11 +202,13 @@ class Variable(Expression):
             return self.symb == other.symb
         else:
             return False
-    def evaluate(self,dic={}):
+            
+    def evaluate(self,dic={}): 
         if self.symb in dic:
             return dic[self.symb]
         else:
             return self.symb
+            
     def derivative(self, variable = 'Matrix'):
         if variable == 'Matrix':
             return self.derivative(self.symb) # voor nu is dit ok
@@ -217,6 +217,11 @@ class Variable(Expression):
                 return Constant(1)
             else:
                 return Constant(0)
+    def primitive(self,variable):
+        if self.symb == variable:
+            return Constant(0.5)*Variable(variable)**Constant(2)
+        else:
+            return Variable(variable)
 
 class BinaryNode(Expression):
     """A node in the expression tree representing a binary operator."""
@@ -241,13 +246,8 @@ class BinaryNode(Expression):
     def __str__(self):
         lstring = str(self.lhs)
         rstring = str(self.rhs)
-        if (self.lhs.prec<self.prec) or (self.lhs.prec==self.prec and not self.lhs.assoc_left):#Doe haakjes om linkerkant immers bij de boom ((5*2)**5) moeten er haakjes om 5*2 in de string
-            #als bv ((3**4)**5) dan prec=prec_links maar links is niet linksasso dus doe haakjes om (3**4)
-            lstring = '('+lstring+')' #dit zorgt voor haakjes om lstring
-        if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.rhs.assoc_right):#Doe haakjes om rechterkant immers bij de boom (3*(2+3)) moeten er haakjes om 2+3 in de string
-            #als bv (2-(5-8)) dan prec=prec_rechts maar rechts is niet rechtsasso, dus doe haakjes om (5-8)
-            rstring = '('+rstring+')' #dit zorgt voor haakjes om rstring
-        #return "%s %s %s" % (lstring, self.op_symbol, rstring)# moet als laatste
+        
+        #return "%s %s %s" % (lstring, self.op_symbol, rstring)# moet als laatste. Versimpeling werkt nog niet zoals ik wil :(
         
 
         # if self.op_symbol == '+':
@@ -264,16 +264,18 @@ class BinaryNode(Expression):
         #         return str(self.rhs)
         #     elif self.rhs == Constant(1):
         #         return str(self.lhs)
+        if (self.lhs.prec<self.prec) or (self.lhs.prec==self.prec and not self.lhs.assoc_left):#Doe haakjes om linkerkant immers bij de boom ((5*2)**5) moeten er haakjes om 5*2 in de string
+            #als bv ((3**4)**5) dan prec=prec_links maar links is niet linksasso dus doe haakjes om (3**4)
+            lstring = '('+lstring+')' #dit zorgt voor haakjes om lstring
+        if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.rhs.assoc_right):#Doe haakjes om rechterkant immers bij de boom (3*(2+3)) moeten er haakjes om 2+3 in de string
+            #als bv (2-(5-8)) dan prec=prec_rechts maar rechts is niet rechtsasso, dus doe haakjes om (5-8)
+            rstring = '('+rstring+')' #dit zorgt voor haakjes om rstring
+        
         return "%s %s %s" % (lstring, self.op_symbol, rstring)
         
                 
                 
-                
-                
-                
-
-    
-    def evaluate(self, dic={}): #evaluatiefunctie
+    def evaluate(self, dic={}): #evaluatiefunctie, volgens mij hebben we gelijk partial evaluate te pakken XD
         if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): #als de evaluatie geen string is laat het algoritme zijn ding doen
         
             if self.op_symbol == '+':
@@ -294,8 +296,7 @@ class BinaryNode(Expression):
         elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str): #als de evaluatie een string blijft (het is dus een variabele zonder waarde toegekend) laat het dan een boom
             return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
         
-#def Totalderivative(function):
-    
+
 class AddNode(BinaryNode):
     """Represents the addition operator"""
     def __init__(self, lhs, rhs):
@@ -303,13 +304,9 @@ class AddNode(BinaryNode):
         
     def derivative(self,variable='Matrix'):
         return self.lhs.derivative(variable)+self.rhs.derivative(variable) 
-    # def MakeMoreSimple(self):
-    #     if self.lhs == Constant(0):
-    #         return self.rhs.MakeMoreSimple()
-    #     if self.rhs == Constant(0):
-    #         return self.lhs.MakeMoreSimple()
-    #     else:
-    #         return "%s %s %s" % (self.lhs.MakeMoresimple, self.op_symbol, self.rhs.MakeMoreSimple)
+        
+    def primitive(self,variable):
+        return self.lhs.primitive(variable)+self.rhs.primitive(variable)
     
 class SubNode(BinaryNode):
     def __init__(self,lhs,rhs):
@@ -317,6 +314,9 @@ class SubNode(BinaryNode):
         
     def derivative(self,variable='Matrix'):
         return self.lhs.derivative(variable)-self.rhs.derivative(variable) 
+        
+    def primitive(self,variable):
+        return self.lhs.primitive(variable)-self.rhs.primitive(variable)        
 class MultNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(MultNode,self).__init__(lhs,rhs,'*',3,True,True)
@@ -324,22 +324,47 @@ class MultNode(BinaryNode):
     def derivative(self,variable='Matrix'):
         return self.lhs.derivative(variable)*self.rhs+self.lhs*self.rhs.derivative(variable) 
         
-    # def MakeMoreSimple(self):
-    #     if self.lhs == Constant(0) or self.rhs == Constant(0):
-    #         return str(Constant(0))
-    #     else:
-    #         return "%s %s %s" % (self.lhs.MakeMoresimple, self.op_symbol, self.rhs.MakeMoreSimple)
+    def primitive(self,variable):
+        if type(self.lhs) == Constant:
+            return self.lhs*self.rhs.primitive(variable)
+            
+        if type(self.rhs) == Constant:
+            return self.rhs*self.lhs.primitive(variable)
+
 class DivNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(DivNode,self).__init__(lhs,rhs,'/',3,True,False)
         
     def derivative(self,variable='Matrix'):
         return (self.lhs.derivative(variable)*self.rhs-self.lhs*self.rhs.derivative(variable))/(self.rhs*self.rhs) 
+        
 class ExpNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(ExpNode,self).__init__(lhs,rhs,'**',4,False,True)
         #hiervan werkt de derivative nog niet, we hebben immers Ln nodig
-
+    def primitive(self,variable):
+        if type(self.rhs) == Constant:
+            return (Constant(1)/(self.rhs+Constant(1)))*Variable(variable)*self
+            
+def NumInt(function,variable,leftinterval,rightinterval,step): #dit is de gebruikelijke Riemann Integratie, het lijkt goed te werken.
+    a = leftinterval+0.5*step
+    c = [function.evaluate({variable:a})]
+    i = step
+    while i+a<=rightinterval:
+        c.append(function.evaluate({variable:i+a}))
+        i=i+step
+    return sum(c)*(a-leftinterval)*2
+    
+def TestFundThmOfCalculus(function,variable): #Als je dit een slecht idee vindt om deze functie toe te voegen kan ik dat ik begrijpen :)
+    F = function.primitive(variable)
+    L = F.evaluate({variable:1})
+    R = F.evaluate({variable:4})
+    D = R - L
+    S = NumInt(function,'x',1,4,0.0001)
+    if abs(D-S)<0.01:
+        return 'The fundamental theorem of calculus is propably true (checked numerically).'
+    else:
+        return 'It seems that the fundamental theorem of calculus is false (that seems strange since it has already been proven)'
 
 #testomgeving 
 a=Constant(4)
@@ -375,7 +400,7 @@ print(Expression.fromString('4+5*7') == Expression.fromString('5*7+4'))
 # k=a+b*d
 
 # print(Expression.evaluate(k,{d:4}))
-expre=Expression.fromString('2+3*y*z+z*z') #volgens mij werkt het naar behoren
+expre=Expression.fromString('2+z*z') #volgens mij werkt het naar behoren
 
 print(type(expre))
 
@@ -388,3 +413,10 @@ print(expr.evaluate())
 x=Constant(0)
 y=Constant(3)
 print((x+y)*g)
+print(NumInt(expre,'z',1,2,0.01))#yess! het werkt!
+print(g.primitive('g'))
+polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
+P=polynoom.primitive('x') # yess! dit werkt ook
+print(P.evaluate({'x':1}))
+
+print(TestFundThmOfCalculus(polynoom,'x'))
