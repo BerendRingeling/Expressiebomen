@@ -417,6 +417,7 @@ print(type(expre))
 print(expre.evaluate({'y':2}))
 f=e+e
 a=expre.derivative('y')#Jeej het werkt
+print(a.evaluate({'z':0}))
 print(type(a))
 print(a)
 print(expr.evaluate())
