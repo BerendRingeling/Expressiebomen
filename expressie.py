@@ -1,4 +1,5 @@
 import math
+#TODO: dictionary maken van operators en eigenschappenlijstjes
 
 # split a string into mathematical tokens
 # returns a list of numbers, operators, parantheses and commas
@@ -41,7 +42,6 @@ def isint(string):
         return False
         
 # check if a string represents a variable
-# dit werkt nog niet, want hij geeft bij alles dat hij er wel een variabele van kan maken ;)
 # ListOfVariables=[]
 def isvar(string):
     try:
@@ -52,8 +52,7 @@ def isvar(string):
         return Value
     except ValueError:
         return False
-# zo met dit gekke lange statement geeft hij alleen bij letters wat we willen, misschien is het goed zo? Maar niet zo'n elegante oplossing. 
-# misschien kunnen we al die voorwaardes weglaten als we de if statements in het shunting alg goed plaatsen.
+
   
 
 
@@ -64,7 +63,11 @@ class Expression():
     Any concrete subclass of Expression should have these methods:
      - __str__(): return a string representation of the Expression.
      - __eq__(other): tree-equality, check if other represents the same expression tree.
+     - evaluate(self,dic={}: to calculate the outcome of an expression, given the values of variables in dictionary
+     - derivative(self, variable): return the derivative of the expression
+     - primitive(self, variable): return primitive of the expression
     """
+    
     # TODO: when adding new methods that should be supported by all subclasses, add them to this list
     
     # operator overloading:
@@ -104,7 +107,7 @@ class Expression():
                     output.append(Constant(int(token)))
                 else:
                     output.append(Constant(float(token)))
-            elif isvar(token): # dit stukje toegevoegd
+            elif isvar(token): 
                 # variables go directly to output as well
                 output.append(Variable(token))
             elif token in oplist:
@@ -125,7 +128,7 @@ class Expression():
                 stack.append(token)
             elif token == ')':
                 # right paranthesis: pop everything upto the last left paranthesis to the output
-                while not stack[-1] == '(':
+                while not stack[-1] == '(':     
                     output.append(stack.pop())
                 # pop the left paranthesis from the stack (but not to the output)
                 stack.pop()
@@ -177,7 +180,7 @@ class Constant(Expression):
     def evaluate(self,dic={}):
         return self.value
     
-    def derivative(self, variable = 'Matrix'): #afgeleide van constante is 0
+    def derivative(self, variable = 'Matrix'): #afgeleide van constante is 0 #TODO: misschien totale afgeleide toevoegen?
         return Constant(0)
         
     def primitive(self, variable):
@@ -243,27 +246,29 @@ class BinaryNode(Expression):
         lstring = str(self.lhs)
         rstring = str(self.rhs)
         
-        #return "%s %s %s" % (lstring, self.op_symbol, rstring)# moet als laatste. Versimpeling werkt nog niet zoals ik wil :(
         
-
-        # if self.op_symbol == '+':
-        #     if self.lhs == Constant(0):
-        #          return str(self.rhs)
-        #     elif self.rhs == Constant(0):
-        #          return str(self.lhs)
-        #     else:
-        #         return "%s %s %s" % (lstring, self.op_symbol, rstring)
-        # elif self.op_symbol == '*':
-        #     if self.lhs == Constant(0) or self.rhs == Constant(0):
-        #         return str(Constant(0))
-        #     if self.lhs == Constant(1):
-        #         return str(self.rhs)
-        #     elif self.rhs == Constant(1):
-        #         return str(self.lhs)
-        if (self.lhs.prec<self.prec) or (self.lhs.prec==self.prec and not self.lhs.assoc_left):#Doe haakjes om linkerkant immers bij de boom ((5*2)**5) moeten er haakjes om 5*2 in de string
+        #simplifier
+        if self.op_symbol == '+':
+            if self.lhs == Constant(0):
+                 self.prec = self.rhs.prec #toegevoegd, ik denk dat het werkt, nog niet uitgebreid getest
+                 return str(self.rhs)
+            elif self.rhs == Constant(0):
+                 self.prec = self.lhs.prec # toegevoegd
+                 return str(self.lhs)
+            
+        elif self.op_symbol == '*':
+            if self.lhs == Constant(0) or self.rhs == Constant(0):
+                return str(Constant(0))
+            if self.lhs == Constant(1) or lstring == str(1): #lstring statement toegevoegd, input in functie gaat niet goed namelijk.
+                return str(self.rhs)
+            elif self.rhs == Constant(1) or rstring == str(1): #lstring statement toegevoegd, zie boven, ik weet niet of dit de 'mooie oplossing' is? 
+            #het deel voor 'or' kan zelfs weg volgens mij, maar dat durf ik niet zomaar te doen ;)
+                return str(self.lhs)
+                
+        if (self.lhs.prec<self.prec) or (self.lhs.prec==self.prec and not self.assoc_left):#Doe haakjes om linkerkant immers bij de boom ((5*2)**5) moeten er haakjes om 5*2 in de string
             #als bv ((3**4)**5) dan prec=prec_links maar links is niet linksasso dus doe haakjes om (3**4)
             lstring = '('+lstring+')' #dit zorgt voor haakjes om lstring
-        if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.rhs.assoc_right):#Doe haakjes om rechterkant immers bij de boom (3*(2+3)) moeten er haakjes om 2+3 in de string
+        if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.assoc_right):#Doe haakjes om rechterkant immers bij de boom (3*(2+3)) moeten er haakjes om 2+3 in de string
             #als bv (2-(5-8)) dan prec=prec_rechts maar rechts is niet rechtsasso, dus doe haakjes om (5-8)
             rstring = '('+rstring+')' #dit zorgt voor haakjes om rstring
         
@@ -281,7 +286,7 @@ class AddNode(BinaryNode):
             return self.lhs.evaluate(dic)+self.rhs.evaluate(dic) # spreekt redelijk voor zich lijkt me
     
         elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str): # dit zorgt voor partial evaluate
-            return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
+            return "(%s) %s (%s)" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
         
     def derivative(self,variable='Matrix'):
         return self.lhs.derivative(variable)+self.rhs.derivative(variable) 
@@ -298,7 +303,7 @@ class SubNode(BinaryNode):
             return self.lhs.evaluate(dic)-self.rhs.evaluate(dic)       
     
         elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str):
-            return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
+            return "(%s) %s (%s)" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
         
     def derivative(self,variable='Matrix'):
         return self.lhs.derivative(variable)-self.rhs.derivative(variable) 
@@ -314,7 +319,7 @@ class MultNode(BinaryNode):
             return self.lhs.evaluate(dic)*self.rhs.evaluate(dic)       
     
         elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str):
-            return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
+            return "(%s) %s (%s)" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
         
     def derivative(self,variable='Matrix'):
         return self.lhs.derivative(variable)*self.rhs+self.lhs*self.rhs.derivative(variable) 
@@ -325,7 +330,7 @@ class MultNode(BinaryNode):
             
         if type(self.rhs) == Constant:
             return self.rhs*self.lhs.primitive(variable)
-
+        
 class DivNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(DivNode,self).__init__(lhs,rhs,'/',3,True,False)
@@ -335,7 +340,7 @@ class DivNode(BinaryNode):
             return self.lhs.evaluate(dic)/self.rhs.evaluate(dic)       
     
         elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str):
-            return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
+            return "(%s) %s (%s)" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
         
         
     def derivative(self,variable='Matrix'):
@@ -350,13 +355,14 @@ class ExpNode(BinaryNode):
             return self.lhs.evaluate(dic)**self.rhs.evaluate(dic)       
     
         elif isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str):
-            return "%s %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
+            return "(%s) %s %s" % (self.lhs.evaluate(dic), self.op_symbol, self.rhs.evaluate(dic))
         
     def primitive(self,variable):
         if type(self.rhs) == Constant:
             return (Constant(1)/(self.rhs+Constant(1)))*Variable(variable)*self
             
-def NumInt(function,variable,leftinterval,rightinterval,step): #dit is de gebruikelijke Riemann Integratie, het lijkt goed te werken.
+#numerieke integratie
+def NumInt(function,variable,leftinterval,rightinterval,step): 
     a = leftinterval+0.5*step
     c = [function.evaluate({variable:a})]
     i = step
@@ -365,7 +371,7 @@ def NumInt(function,variable,leftinterval,rightinterval,step): #dit is de gebrui
         i=i+step
     return sum(c)*(a-leftinterval)*2
     
-def TestFundThmOfCalculus(function,variable): #Als je dit een slecht idee vindt om deze functie toe te voegen kan ik dat ik begrijpen :)
+def TestFundThmOfCalculus(function,variable): 
     F = function.primitive(variable)
     L = F.evaluate({variable:1})
     R = F.evaluate({variable:4})
@@ -375,60 +381,78 @@ def TestFundThmOfCalculus(function,variable): #Als je dit een slecht idee vindt 
         return 'The fundamental theorem of calculus is propably true (checked numerically).'
     else:
         return 'It seems that the fundamental theorem of calculus is false (that seems strange since it has already been proven)'
+        
+def PartialEvaluation(Expr, dic):
+    return Expression.fromString(Expr.evaluate(dic))
 
 #testomgeving 
 a=Constant(4)
 b=Constant(5)
 c=Constant(7)
 e=Variable('x')
-print(e)
-print(a+b*(c+a))
-print((a+b)*(c+a))
-print(type(a+b*(c+a)))
-expr = Expression.fromString('(4+(5*7))') # omdat we nu de print overschreven hebben kunnen we nooit meer de boomstr. printen, is dat niet onhandig?
-print(expr)
-# TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
-hallo='Dit is raar'
-print('Hallo Allemaal (%s)' % hallo)
 
-
-
-
-#print(eval('3 + d'))
-# ik snap het stukje van eval niet echt volgens mij, waarom staat dat in het shunting alg? en misschien zit daar ook het probleem van de error?
-g = Variable('g')
-der=g.derivative()
-print(der)
-
-print(Expression.fromString('4+5*7') == Expression.fromString('5*7+4'))
-# g=(a*d)+b
-# h=str(g)
-# print(h)
-# d=2
-# eval(h)
-# print(eval(h))
-# k=a+b*d
-
-# print(Expression.evaluate(k,{d:4}))
-expre=Expression.fromString('2+z*z') #volgens mij werkt het naar behoren
-
-print(type(expre))
-
-print(expre.evaluate({'y':2}))
-f=e+e
-a=expre.derivative('y')#Jeej het werkt
-print(a.evaluate({'z':0}))
-print(type(a))
-print(a)
+expr = Expression.fromString('(4+(5*7))') 
 print(expr.evaluate())
-x=Constant(0)
-y=Constant(3)
-print((x+y)*g)
-print(NumInt(expre,'z',1,2,0.01))#yess! het werkt!
-print(g.primitive('g'))
-polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
-P=polynoom.primitive('x') # yess! dit werkt ook
-print(P.evaluate({'x':1}))
-print(P.evaluate())
+# TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
 
-print(TestFundThmOfCalculus(polynoom,'x'))
+expres = Expression.fromString('5/(e+1)') #nu gaan de haakjes fout! moet onder de breuk juist wel haakjes.
+print(expres.derivative('e'))
+# hebben we bedacht/getest wat er uit moet komen als twee bomen d/e verschillen maar d = e?
+
+
+expre=Expression.fromString('2+y+z*z') #volgens mij werkt het naar behoren
+print(PartialEvaluation(expre,{'y':14}))
+print(expre)
+print(expre.evaluate({'y':2})) # als ik expre met haakjes verander, verandert het printen van deze niet mee, dat gaat dan niet goed toch? 
+                                #met z=2 gaat het wel goed, verandert de uitkomst mee.
+a=expre.derivative('y')#Jeej het werkt --> deze verandert wel mee als ik expre verander
+print(a)
+# print(NumInt(expre,'z',1,2,0.01))#yess! het werkt!
+# polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
+# P=polynoom.primitive('x') # yess! dit werkt ook
+# print(P.evaluate({'x':1}))
+# print(P.evaluate())
+#print(TestFundThmOfCalculus(polynoom,'x'))
+
+
+#het mooiste is misschien om het zo te doen dat hij standaard wel het meest versimpelt, maar dat er ook een functie is voor "print hele boom/print met zo min mogelijk haakjes maar wel met alle getallen
+
+print(Expression.fromString('1+0'))
+print(Expression.fromString('(1+0)'))
+print(Expression.fromString('(0+1)*2')) 
+print(Expression.fromString('1*2'))
+print(Expression.fromString('(1*1)+0'))
+
+
+# <<<<<<< HEAD
+# print(expre.evaluate({'y':2}))
+# f=e+e
+# a=expre.derivative('y')#Jeej het werkt
+# print(a.evaluate({'z':0}))
+# print(type(a))
+# print(a)
+# print(expr.evaluate())
+# x=Constant(0)
+# y=Constant(3)
+# print((x+y)*g)
+# print(NumInt(expre,'z',1,2,0.01))#yess! het werkt!
+# print(g.primitive('g'))
+# polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
+# P=polynoom.primitive('x') # yess! dit werkt ook
+# print(P.evaluate({'x':1}))
+# print(P.evaluate())
+# =======
+# >>>>>>> cf03a4c435deb57300691ddca0cee2ead9510f31
+
+print(0 == str(0))
+
+#willen we van 0-5 ook -5 maken? En hoe zit dat eigenlijk uberhaupt met min getallen, daar kunnen we niet echt mee rekenen volgens mij? ff testen.
+i = Constant(1)
+j = Constant(3)
+a = Expression.fromString('i+j')
+
+print(Expression.fromString('3/(5*5)'))
+print(type(Expression.fromString('3/(5*5)')))
+
+#uhm ik snap even niet waarom hij niks invult enzo, dus misschien moeten we hier morgen samen maar naar kijken ;)
+#0+0 gaat nog niet goed ergens....??
