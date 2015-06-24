@@ -395,11 +395,19 @@ b=Constant(5)
 c=Constant(7)
 e=Variable('x')
 print(Expression.fromString('(4+(5*7))'))
+<<<<<<< HEAD
 
+=======
+print(expr.evaluate())
+>>>>>>> 0d9b40a3ee53e5898f3b28f962a1a9d0eb16b91f
 # TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
 
 expres = Expression.fromString('5/(e+1)') 
 print(expres.derivative('e'))
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0d9b40a3ee53e5898f3b28f962a1a9d0eb16b91f
 
 
 
@@ -461,4 +469,8 @@ print(a.primitive('x'))
 # b = a + a*a
 # print(b.derivative())
 # print(b)
+<<<<<<< HEAD
 # print(b.primitive('x'))
+=======
+# print(b.primitive('x'))
+>>>>>>> 0d9b40a3ee53e5898f3b28f962a1a9d0eb16b91f
