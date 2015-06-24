@@ -46,15 +46,12 @@ def isint(string):
 def isvar(string):
     try:
         Variable(string)
-        Value = True and not isnumber(string) and not string in ['+', '-', '*', '/', '**','(',')']
+        Value = True and not isnumber(string) and not string in ['+', '-', '*', '/', '**','(',')'] #and len(list(string)) == 1
         # if Value == True:
         #     ListOfVariables.append(str(Variable(string)))
         return Value
     except ValueError:
         return False
-
-  
-
 
 class Expression():
     """A mathematical expression, represented as an expression tree"""
@@ -97,8 +94,8 @@ class Expression():
         # list of operators
         oplist = ['+','-','*','/','**']
         preclist=[2,2,3,3,4]
-        assoclist=['L','L','L','L','R']
-        
+        left_assoclist=[True,True,True,True,False]
+        right_assoclist=[True,False,True,False]
         
         for token in tokens:
             if isnumber(token):
@@ -117,7 +114,7 @@ class Expression():
                         break
                     z=oplist.index(token)
                     x=oplist.index(stack[-1])
-                    if (assoclist[z]=='L' and preclist[z]<=preclist[x]) or (assoclist[z]=='R' and preclist[z]<preclist[x]):
+                    if (left_assoclist[z]==True and preclist[z]<=preclist[x]) or (left_assoclist[z]==False and preclist[z]<preclist[x]):
                         output.append(stack.pop())
                     else:
                         break
@@ -328,8 +325,14 @@ class MultNode(BinaryNode):
         if type(self.lhs) == Constant:
             return self.lhs*self.rhs.primitive(variable)
             
-        if type(self.rhs) == Constant:
+        elif type(self.rhs) == Constant:
             return self.rhs*self.lhs.primitive(variable)
+        
+        else:
+            print('Sorry, i can\'t do this!')
+            
+
+        
         
 class DivNode(BinaryNode):
     def __init__(self,lhs,rhs):
@@ -360,6 +363,7 @@ class ExpNode(BinaryNode):
     def primitive(self,variable):
         if type(self.rhs) == Constant:
             return (Constant(1)/(self.rhs+Constant(1)))*Variable(variable)*self
+        #2^x nog toevoegen en daarna algemene errormessage
             
 #numerieke integratie
 def NumInt(function,variable,leftinterval,rightinterval,step): 
@@ -390,22 +394,20 @@ a=Constant(4)
 b=Constant(5)
 c=Constant(7)
 e=Variable('x')
+print(Expression.fromString('(4+(5*7))'))
 
-expr = Expression.fromString('(4+(5*7))') 
-print(expr.evaluate())
 # TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
 
-expres = Expression.fromString('5/(e+1)') #nu gaan de haakjes fout! moet onder de breuk juist wel haakjes.
+expres = Expression.fromString('5/(e+1)') 
 print(expres.derivative('e'))
-# hebben we bedacht/getest wat er uit moet komen als twee bomen d/e verschillen maar d = e?
+
 
 
 expre=Expression.fromString('2+y+x+z*z') #volgens mij werkt het naar behoren
-print(PartialEvaluation(expre,{'y':14,'x':1}))
+print(PartialEvaluation(expre,{'y':14,'x':2}))
 print(expre)
-print(expre.evaluate({'y':2})) # als ik expre met haakjes verander, verandert het printen van deze niet mee, dat gaat dan niet goed toch? 
-                                #met z=2 gaat het wel goed, verandert de uitkomst mee.
-a=expre.derivative('y')#Jeej het werkt --> deze verandert wel mee als ik expre verander
+print(expre.evaluate({'y':2})) 
+a=expre.derivative('y')
 print(a)
 # print(NumInt(expre,'z',1,2,0.01))#yess! het werkt!
 # polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
@@ -415,7 +417,7 @@ print(a)
 #print(TestFundThmOfCalculus(polynoom,'x'))
 
 
-#het mooiste is misschien om het zo te doen dat hij standaard wel het meest versimpelt, maar dat er ook een functie is voor "print hele boom/print met zo min mogelijk haakjes maar wel met alle getallen
+#TODO: functies voor printen boomstructuur, printen zonder versimpeling.
 
 print(Expression.fromString('1+0'))
 print(Expression.fromString('(1+0)'))
@@ -424,10 +426,10 @@ print(Expression.fromString('1*2'))
 print(Expression.fromString('(1*1)+0'))
 
 
-# <<<<<<< HEAD
+
 # print(expre.evaluate({'y':2}))
 # f=e+e
-# a=expre.derivative('y')#Jeej het werkt
+# a=expre.derivative('y')
 # print(a.evaluate({'z':0}))
 # print(type(a))
 # print(a)
@@ -435,24 +437,28 @@ print(Expression.fromString('(1*1)+0'))
 # x=Constant(0)
 # y=Constant(3)
 # print((x+y)*g)
-# print(NumInt(expre,'z',1,2,0.01))#yess! het werkt!
+# print(NumInt(expre,'z',1,2,0.01))
 # print(g.primitive('g'))
 # polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
-# P=polynoom.primitive('x') # yess! dit werkt ook
+# P=polynoom.primitive('x')
 # print(P.evaluate({'x':1}))
 # print(P.evaluate())
-# =======
-# >>>>>>> cf03a4c435deb57300691ddca0cee2ead9510f31
+
 
 print(0 == str(0))
 
 #willen we van 0-5 ook -5 maken? En hoe zit dat eigenlijk uberhaupt met min getallen, daar kunnen we niet echt mee rekenen volgens mij? ff testen.
-i = Constant(1)
-j = Constant(3)
-a = Expression.fromString('i+j')
+
+# a = Expression.fromString('-3+5')
 
 print(Expression.fromString('3/(5*5)'))
 print(type(Expression.fromString('3/(5*5)')))
 
 #uhm ik snap even niet waarom hij niks invult enzo, dus misschien moeten we hier morgen samen maar naar kijken ;)
 #0+0 gaat nog niet goed ergens....??
+a = Expression.fromString('x+1')
+print(a.primitive('x'))
+# b = a + a*a
+# print(b.derivative())
+# print(b)
+# print(b.primitive('x'))
