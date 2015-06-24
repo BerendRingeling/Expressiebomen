@@ -400,8 +400,8 @@ print(expres.derivative('e'))
 # hebben we bedacht/getest wat er uit moet komen als twee bomen d/e verschillen maar d = e?
 
 
-expre=Expression.fromString('2+y+z*z') #volgens mij werkt het naar behoren
-print(PartialEvaluation(expre,{'y':14}))
+expre=Expression.fromString('2+y+x+z*z') #volgens mij werkt het naar behoren
+print(PartialEvaluation(expre,{'y':14,'x':1}))
 print(expre)
 print(expre.evaluate({'y':2})) # als ik expre met haakjes verander, verandert het printen van deze niet mee, dat gaat dan niet goed toch? 
                                 #met z=2 gaat het wel goed, verandert de uitkomst mee.
