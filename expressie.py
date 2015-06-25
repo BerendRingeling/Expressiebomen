@@ -52,6 +52,10 @@ def isvar(string):
         return Value
     except ValueError:
         return False
+oplist = ['+','-','*','/','**']
+preclist={'+':2, '-':2, '*':3, '/':3, '**':4}
+left_assoclist={'+':True,'-':True,'*':True,'/':True,'**':False}
+right_assoclist={'+':True,'-':False,'*':True,'/':False,'**':True}
 
 class Expression():
     """A mathematical expression, represented as an expression tree"""
@@ -74,7 +78,7 @@ class Expression():
     def __sub__(self, other):
         return SubNode(self, other)
     def __mul__(self,other):
-        return MultNode(self,other)
+        return MulNode(self,other)
     def __truediv__(self,other):
         return DivNode(self,other)
     def __pow__(self,other):
@@ -91,11 +95,7 @@ class Expression():
         # this will contain Constant's and '+'s
         output = []
         
-        # list of operators
-        oplist = ['+','-','*','/','**']
-        preclist=[2,2,3,3,4]
-        left_assoclist=[True,True,True,True,False]
-        right_assoclist=[True,False,True,False]
+
         
         for token in tokens:
             if isnumber(token):
@@ -112,9 +112,7 @@ class Expression():
                 while True:
                     if len(stack) == 0 or stack[-1] not in oplist:
                         break
-                    z=oplist.index(token)
-                    x=oplist.index(stack[-1])
-                    if (left_assoclist[z]==True and preclist[z]<=preclist[x]) or (left_assoclist[z]==False and preclist[z]<preclist[x]):
+                    if (left_assoclist[token]==True and preclist[token]<=preclist[stack[-1]]) or (left_assoclist[token]==False and preclist[token]<preclist[stack[-1]]):
                         output.append(stack.pop())
                     else:
                         break
@@ -151,6 +149,15 @@ class Expression():
                 stack.append(t)
         # the resulting expression tree is what's left on the stack
         return stack[0]
+        
+def Evalue(expression,dic = {}):
+    try:
+        float(expression.evaluate(dic))
+        return expression.evaluate(dic)
+        
+    except ValueError:
+        print('hoi')
+        return PartialEvaluation(expression,dic)
         
 
 class Constant(Expression):
@@ -276,7 +283,7 @@ class BinaryNode(Expression):
 class AddNode(BinaryNode):
     """Represents the addition operator"""
     def __init__(self, lhs, rhs):
-        super(AddNode, self).__init__(lhs, rhs, '+',2,True,True)
+        super(AddNode, self).__init__(lhs, rhs, '+',preclist['+'],left_assoclist['+'],right_assoclist['+'])
         
     def evaluate(self, dic={}): 
         if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): 
@@ -293,7 +300,7 @@ class AddNode(BinaryNode):
     
 class SubNode(BinaryNode):
     def __init__(self,lhs,rhs):
-        super(SubNode,self).__init__(lhs,rhs,'-',2,True,False)
+        super(SubNode,self).__init__(lhs, rhs, '-',preclist['-'],left_assoclist['-'],right_assoclist['-'])
         
     def evaluate(self, dic={}): 
         if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): 
@@ -307,9 +314,9 @@ class SubNode(BinaryNode):
         
     def primitive(self,variable):
         return self.lhs.primitive(variable)-self.rhs.primitive(variable)        
-class MultNode(BinaryNode):
+class MulNode(BinaryNode):
     def __init__(self,lhs,rhs):
-        super(MultNode,self).__init__(lhs,rhs,'*',3,True,True)
+        super(MulNode,self).__init__(lhs, rhs, '*',preclist['*'],left_assoclist['*'],right_assoclist['*'])
         
     def evaluate(self, dic={}): 
         if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): 
@@ -336,7 +343,7 @@ class MultNode(BinaryNode):
         
 class DivNode(BinaryNode):
     def __init__(self,lhs,rhs):
-        super(DivNode,self).__init__(lhs,rhs,'/',3,True,False)
+        super(DivNode,self).__init__(lhs, rhs, '/',preclist['/'],left_assoclist['/'],right_assoclist['/'])
 
     def evaluate(self, dic={}): 
         if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): 
@@ -351,7 +358,7 @@ class DivNode(BinaryNode):
         
 class ExpNode(BinaryNode):
     def __init__(self,lhs,rhs):
-        super(ExpNode,self).__init__(lhs,rhs,'**',4,False,True)
+        super(ExpNode,self).__init__(lhs, rhs, '**',preclist['**'],left_assoclist['**'],right_assoclist['**'])
         #hiervan werkt de derivative nog niet, we hebben immers Ln nodig
     def evaluate(self, dic={}): 
         if not (isinstance(self.lhs.evaluate(dic),str) or isinstance(self.rhs.evaluate(dic),str)): 
@@ -388,89 +395,81 @@ def TestFundThmOfCalculus(function,variable):
         
 def PartialEvaluation(Expr, dic):
     return Expression.fromString(Expr.evaluate(dic))
-
-#testomgeving 
-a=Constant(4)
-b=Constant(5)
-c=Constant(7)
-e=Variable('x')
-print(Expression.fromString('(4+(5*7))'))
-<<<<<<< HEAD
-
-=======
-print(expr.evaluate())
->>>>>>> 0d9b40a3ee53e5898f3b28f962a1a9d0eb16b91f
-# TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
-
-expres = Expression.fromString('5/(e+1)') 
-print(expres.derivative('e'))
-<<<<<<< HEAD
-=======
-
->>>>>>> 0d9b40a3ee53e5898f3b28f962a1a9d0eb16b91f
+expr = Expression.fromString('x+y+z')
+print((float((expr.evaluate({'x':1,'y':1,'z':2})))))
+print(Evalue(expr))
+# #testomgeving 
+# a=Constant(4)
+# b=Constant(5)
+# c=Constant(7)
+# e=Variable('x')
+# print(Expression.fromString('(4+(5*7))'))
 
 
 
-expre=Expression.fromString('2+y+x+z*z') #volgens mij werkt het naar behoren
-print(PartialEvaluation(expre,{'y':14,'x':2}))
-print(expre)
-print(expre.evaluate({'y':2})) 
-a=expre.derivative('y')
-print(a)
-# print(NumInt(expre,'z',1,2,0.01))#yess! het werkt!
-# polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
-# P=polynoom.primitive('x') # yess! dit werkt ook
-# print(P.evaluate({'x':1}))
-# print(P.evaluate())
-#print(TestFundThmOfCalculus(polynoom,'x'))
+# # TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
 
-
-#TODO: functies voor printen boomstructuur, printen zonder versimpeling.
-
-print(Expression.fromString('1+0'))
-print(Expression.fromString('(1+0)'))
-print(Expression.fromString('(0+1)*2')) 
-print(Expression.fromString('1*2'))
-print(Expression.fromString('(1*1)+0'))
+# expres = Expression.fromString('5/(e+1)') 
+# print(expres.derivative('e'))
 
 
 
-# print(expre.evaluate({'y':2}))
-# f=e+e
+# expre=Expression.fromString('2+y+x+z*z') #volgens mij werkt het naar behoren
+# print(PartialEvaluation(expre,{'y':14,'x':2}))
+# print(Evalue(expre,{'y':2,'x':2,'z':1}))
+# print(expre)
+# print(PartialEvaluation(expre,{'y':2})) 
 # a=expre.derivative('y')
-# print(a.evaluate({'z':0}))
-# print(type(a))
 # print(a)
-# print(expr.evaluate())
-# x=Constant(0)
-# y=Constant(3)
-# print((x+y)*g)
-# print(NumInt(expre,'z',1,2,0.01))
-# print(g.primitive('g'))
-# polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
-# P=polynoom.primitive('x')
-# print(P.evaluate({'x':1}))
-# print(P.evaluate())
+# # print(NumInt(expre,'z',1,2,0.01))#yess! het werkt!
+# # polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
+# # P=polynoom.primitive('x') # yess! dit werkt ook
+# # print(P.evaluate({'x':1}))
+# # print(P.evaluate())
+# #print(TestFundThmOfCalculus(polynoom,'x'))
 
 
-print(0 == str(0))
+# #TODO: functies voor printen boomstructuur, printen zonder versimpeling.
 
-#willen we van 0-5 ook -5 maken? En hoe zit dat eigenlijk uberhaupt met min getallen, daar kunnen we niet echt mee rekenen volgens mij? ff testen.
+# print(Expression.fromString('1+0'))
+# print(Expression.fromString('(1+0)'))
+# print(Expression.fromString('(0+1)*2')) 
+# print(Expression.fromString('1*2'))
+# print(Expression.fromString('(1*1)+0'))
 
-# a = Expression.fromString('-3+5')
 
-print(Expression.fromString('3/(5*5)'))
-print(type(Expression.fromString('3/(5*5)')))
 
-#uhm ik snap even niet waarom hij niks invult enzo, dus misschien moeten we hier morgen samen maar naar kijken ;)
-#0+0 gaat nog niet goed ergens....??
-a = Expression.fromString('x+1')
-print(a.primitive('x'))
-# b = a + a*a
-# print(b.derivative())
-# print(b)
-<<<<<<< HEAD
-# print(b.primitive('x'))
-=======
-# print(b.primitive('x'))
->>>>>>> 0d9b40a3ee53e5898f3b28f962a1a9d0eb16b91f
+# # print(expre.evaluate({'y':2}))
+# # f=e+e
+# # a=expre.derivative('y')
+# # print(a.evaluate({'z':0}))
+# # print(type(a))
+# # print(a)
+# # print(expr.evaluate())
+# # x=Constant(0)
+# # y=Constant(3)
+# # print((x+y)*g)
+# # print(NumInt(expre,'z',1,2,0.01))
+# # print(g.primitive('g'))
+# # polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
+# # P=polynoom.primitive('x')
+# # print(P.evaluate({'x':1}))
+# # print(P.evaluate())
+
+
+# print(0 == str(0))
+
+# #willen we van 0-5 ook -5 maken? En hoe zit dat eigenlijk uberhaupt met min getallen, daar kunnen we niet echt mee rekenen volgens mij? ff testen.
+
+# # a = Expression.fromString('-3+5')
+
+# print(Expression.fromString('3/(5*5)'))
+# print(type(Expression.fromString('3/(5*5)')))
+
+# #uhm ik snap even niet waarom hij niks invult enzo, dus misschien moeten we hier morgen samen maar naar kijken ;)
+# #0+0 gaat nog niet goed ergens....??
+# a = Expression.fromString('x+1')
+# print(a.primitive('x'))
+# # b = a + a*a
+# # print(b.derivative())
+# # print(b)
