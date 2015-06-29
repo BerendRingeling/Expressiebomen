@@ -572,7 +572,8 @@ a=Expression.fromString('4/4')
 print(a.simplify())
 
 expres = Expression.fromString('x**x+22')
-print(expres.derivative('x'))
+
 #print(expres.primitive('x'))
+print(evaluate(expres))
 
 print(a)
