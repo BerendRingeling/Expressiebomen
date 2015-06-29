@@ -543,10 +543,13 @@ expr = Expression.fromString('(1+0)+z')
 # # b = a + a*a
 # # print(b.derivative())
 # # print(b)
-printoptie = 'simplify'
+printoptie = 'boom'
 print(expr)
 print(expr.boom())
 print(expr.simplify())
-printoptie=1
-expres = Expression.fromString('x**x')
-print(expres.primitive('x'))
+
+# expres = Expression.fromString('x**x+2')
+# print(expres.primitive('x'))
+a = Expression.fromString('Ln(1)')
+print(type(a))
+print(a)
