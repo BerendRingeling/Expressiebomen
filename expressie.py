@@ -1,6 +1,4 @@
 import math
-#TODO: foutmelding toevoegen bij differentieren
-#TODO: kijken naar opmerking regel 117 in shunting yard algoritme.
 
 #list with information about operators and their properties
 oplist = ['+','-','*','/','**']
@@ -51,17 +49,13 @@ def isint(string):
         return False
         
 # check if a string represents a variable
-# ListOfVariables=[]
 def isvar(string):
     try:
         Variable(string)
-        Value = True and not isnumber(string) and not string in ['+', '-', '*', '/', '**','(',')'] #and len(list(string)) == 1
-        # if Value == True:
-        #     ListOfVariables.append(str(Variable(string)))
+        Value = True and not isnumber(string) and not string in ['+', '-', '*', '/', '**','(',')']
         return Value
     except ValueError:
         return False
-#TODO: hier staan allemaal stukjes met een hekje, heb jij daar iets mee van doen? :p moet nog even netjes worden gemaakt denk ik.        
         
 class Expression():
     """A mathematical expression, represented as an expression tree"""
@@ -74,8 +68,7 @@ class Expression():
      - derivative(self, variable): return the derivative of the expression
      - primitive(self, variable): return primitive of the expression
     """
-    
-    # TODO: when adding new methods that should be supported by all subclasses, add them to this list
+    #evaluate, derivative, primitive recursive defined
     
     # operator overloading:
     # this allows us to perform 'arithmetic' with expressions, and obtain another expression
@@ -115,7 +108,6 @@ class Expression():
                 while True:
                     if len(stack) == 0 or stack[-1] not in oplist:
                         break
-                    #Dit is niet meer goed volgens mij! We moeten nu anders verwijzen toch omdat we de lijstjes veranderd hebben??
                     if (left_assoclist[token]==True and preclist[token]<=preclist[stack[-1]]) or (left_assoclist[token]==False and preclist[token]<preclist[stack[-1]]):
                         output.append(stack.pop())
                     else:
@@ -146,13 +138,13 @@ class Expression():
                 x = stack.pop()
                 stack.append(eval('x %s y' % t))
             else:
-                # a constant, push it to the stack
+                # a constant or variable, push it to the stack
                 stack.append(t)
         # the resulting expression tree is what's left on the stack
         
         return stack[0]
 
-#takes care of regulating if you need partial evaluation or full evaluation
+# evaluate takes care of regulating if you need partial evaluation or full evaluation
 def evaluate(expression,dic = {}):
     try:
         float(expression.evaluate_node(dic))
@@ -195,7 +187,7 @@ class Constant(Expression):
     def evaluate_node(self,dic={}):
         return self.value
     
-    def derivative(self, variable = 'Matrix'): #afgeleide van constante is 0 #TODO: misschien totale afgeleide toevoegen?
+    def derivative(self, variable = 'Object'): #derivative of constant is 0
         return Constant(0)
         
     def primitive(self, variable):
@@ -234,9 +226,9 @@ class Variable(Expression):
             
     def derivative(self, variable = 'Object'):
         if variable == 'Object':
-            return self.derivative(self.symb) # voor nu is dit ok
+            return self.derivative(self.symb)
         else:
-            if self.symb == variable: #we voegen hier gelijk een notie van partiele afgeleide in, als we differentieren naar x dan is de afgeleide van y 0
+            if self.symb == variable: #here is a notion of partial differential evaluation, if the given variable is x,  y'=0
                 return Constant(1)
             else:
                 return Constant(0)
@@ -257,15 +249,14 @@ class BinaryNode(Expression):
         self.assoc_left = assoc_left 
         self.assoc_right = assoc_right
         
-    
-    #TODO: propertie identity, etc.
             
     def __eq__(self, other):
         if type(self) == type(other):
             return self.lhs == other.lhs and self.rhs == other.rhs
         else:
             return False
-            
+
+#check which printoption is asked            
     def __str__(self):
         if printoptie == 'normal':
             return self.normal()
@@ -273,30 +264,33 @@ class BinaryNode(Expression):
             return self.tree()
         elif printoptie == 'simplify':
             return self.simplify()
-    
-        
-        
+
+    #print the expression only with parantheses that are necessary, conventional notation    
     def normal(self):    
 
         lstring = self.lhs.normal()
         rstring = self.rhs.normal()
         
-        if (self.lhs.prec<self.prec) or (self.lhs.prec==self.prec and not self.assoc_left):#Doe haakjes om linkerkant immers bij de tree ((5*2)**5) moeten er haakjes om 5*2 in de string
-            #als bv ((3**4)**5) dan prec=prec_links maar links is niet linksasso dus doe haakjes om (3**4)
+        if (self.lhs.prec<self.prec) or (self.lhs.prec==self.prec and not self.assoc_left):
+            #put parantheses on leftside, as in tree ((5*2)**5), 5*2 needs parantheses, 
+            #((3**4)**5) then prec=left_prec but left not left associative so 3**4 needs parantheses
             lstring = '('+lstring+')' #dit zorgt voor haakjes om lstring
-        if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.assoc_right):#Doe haakjes om rechterkant immers bij de tree (3*(2+3)) moeten er haakjes om 2+3 in de string
-            #als bv (2-(5-8)) dan prec=prec_rechts maar rechts is niet rechtsasso, dus doe haakjes om (5-8)
+        if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.assoc_right):
+            #put parantheses on right side, as in tree (3*(2+3)), 2+3 needs parantheses, 
+            #(2-(5-8)) then prec=right_prec but right not right associative so 5-8 needs parantheses
             rstring = '('+rstring+')' #dit zorgt voor haakjes om rstring
     
         return "%s %s %s" % (lstring, self.op_symbol, rstring)
     
+    #print with parantheses around every part of the expression that represents a node   
     def tree(self):
         
         lstring = self.lhs.tree()
         rstring = self.rhs.tree()
         
         return "(%s %s %s)" % (lstring, self.op_symbol, rstring)
-        
+    
+    #print without unnecessary parts of the expression +0, *0, *1    
     def simplify(self):
         
         lstring = self.lhs.simplify()
@@ -305,19 +299,18 @@ class BinaryNode(Expression):
 
         if self.op_symbol == '+':
             if self.lhs == Constant(0):
-                 self.prec = self.rhs.prec #toegevoegd, ik denk dat het werkt, nog niet uitgebreid getest
+                 self.prec = self.rhs.prec 
                  return self.rhs.simplify()
             elif self.rhs == Constant(0):
-                 self.prec = self.lhs.prec # toegevoegd
+                 self.prec = self.lhs.prec
                  return self.lhs.simplify()
             
         elif self.op_symbol == '*':
             if self.lhs == Constant(0) or self.rhs == Constant(0):
                 return str(Constant(0))
-            if self.lhs == Constant(1) or lstring == str(1): #lstring statement toegevoegd, input in functie gaat niet goed namelijk.
+            if self.lhs == Constant(1) or lstring == str(1): 
                 return self.rhs.simplify()
-            elif self.rhs == Constant(1) or rstring == str(1): #lstring statement toegevoegd, zie boven, ik weet niet of dit de 'mooie oplossing' is? 
-            #het deel voor 'or' kan zelfs weg volgens mij, maar dat durf ik niet zomaar te doen ;)
+            elif self.rhs == Constant(1) or rstring == str(1): 
                 return self.rhs.simplify()
         elif self.op_symbol == '/':
             if self.lhs == Constant(0) or lstring == str(0) and self.rhs != str(0):
@@ -327,17 +320,17 @@ class BinaryNode(Expression):
             if self.lhs == self.rhs and self.rhs != Constant(0):
                 return str(Constant(1))
                 
-        if (self.lhs.prec<self.prec) or (self.lhs.prec==self.prec and not self.assoc_left):#Doe haakjes om linkerkant immers bij de tree ((5*2)**5) moeten er haakjes om 5*2 in de string
-            #als bv ((3**4)**5) dan prec=prec_links maar links is niet linksasso dus doe haakjes om (3**4)
+        if (self.lhs.prec<self.prec) or (self.lhs.prec==self.prec and not self.assoc_left):
+            #put parantheses on leftside, as in tree ((5*2)**5), 5*2 needs parantheses, 
+            #((3**4)**5) then prec=left_prec but left not left associative so 3**4 needs parantheses
             lstring = '('+lstring+')' #dit zorgt voor haakjes om lstring
-        if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.assoc_right):#Doe haakjes om rechterkant immers bij de tree (3*(2+3)) moeten er haakjes om 2+3 in de string
-            #als bv (2-(5-8)) dan prec=prec_rechts maar rechts is niet rechtsasso, dus doe haakjes om (5-8)
+        if (self.rhs.prec<self.prec) or (self.rhs.prec==self.prec and not self.assoc_right):
+            #put parantheses on right side, as in tree (3*(2+3)), 2+3 needs parantheses, 
+            #(2-(5-8)) then prec=right_prec but right not right associative so 5-8 needs parantheses
             rstring = '('+rstring+')' #dit zorgt voor haakjes om rstring
         
         return "%s %s %s" % (lstring, self.op_symbol, rstring)            
             
-
-                
 
 class AddNode(BinaryNode):
     """Represents the addition operator"""
@@ -398,9 +391,6 @@ class MulNode(BinaryNode):
         else:
             raise ValueError('Sorry, I can\'t integrate this type of function.')
             
-
-        
-        
 class DivNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(DivNode,self).__init__(lhs, rhs, '/',preclist['/'],left_assoclist['/'],right_assoclist['/'])
@@ -427,7 +417,7 @@ class DivNode(BinaryNode):
 class ExpNode(BinaryNode):
     def __init__(self,lhs,rhs):
         super(ExpNode,self).__init__(lhs, rhs, '**',preclist['**'],left_assoclist['**'],right_assoclist['**'])
-        #hiervan werkt de derivative nog niet, we hebben immers Ln nodig
+        
     def evaluate_node(self, dic={}): 
         if not (isinstance(self.lhs.evaluate_node(dic),str) or isinstance(self.rhs.evaluate_node(dic),str)): 
             return self.lhs.evaluate_node(dic)**self.rhs.evaluate_node(dic)       
@@ -453,9 +443,8 @@ class ExpNode(BinaryNode):
             return self*Variable(variable)
         else:
             raise ValueError('Sorry, I can\'t integrate this type of function.')
-        #2^x nog toevoegen en daarna algemene errormessage
             
-#numerieke integratie
+#numerical integration
 def NumInt(function,variable,leftinterval,rightinterval,step): 
     FirstInterval = leftinterval+0.5*step
     Evaluation = [function.evaluate_node({variable:FirstInterval})]
@@ -465,6 +454,7 @@ def NumInt(function,variable,leftinterval,rightinterval,step):
         i=i+step
     return sum(Evaluation)*(FirstInterval-leftinterval)*2
     
+#numerical test of the fundamental Theorem of Calculus
 def TestFundThmOfCalculus(function,variable): 
     Function = function.primitive(variable)
     LeftValue = Function.evaluate_node({variable:1})
@@ -478,101 +468,3 @@ def TestFundThmOfCalculus(function,variable):
         
 def PartialEvaluation(Expr, dic):
     return Expression.fromString(Expr.evaluate_node(dic))
-# print(evaluate(expr,{'x':1,'y':12}))
-# print(str(expr,'structure'))
-#testomgeving 
-# a=Constant(4)
-# b=Constant(5)
-# c=Constant(7)
-# e=Variable('x')
-# print(Expression.fromString('(4+(5*7))'))
-
-
-
-# # TODO: add more subclasses of Expression to represent operators, variables, functions, etc.
-
-# expres = Expression.fromString('5/(e+1)') 
-# print(expres.derivative('e'))
-
-
-
-# expre=Expression.fromString('2+y+x+z*z') #volgens mij werkt het naar behoren
-# print(PartialEvaluation(expre,{'y':14,'x':2}))
-# print(evaluate(expre,{'y':2,'x':2,'z':1}))
-# print(expre)
-# print(PartialEvaluation(expre,{'y':2})) 
-# a=expre.derivative('y')
-# print(a)
-# # print(NumInt(expre,'z',1,2,0.01))#yess! het werkt!
-# # polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
-# # P=polynoom.primitive('x') # yess! dit werkt ook
-# # print(P.evaluate_node({'x':1}))
-# # print(P.evaluate_node())
-# #print(TestFundThmOfCalculus(polynoom,'x'))
-
-
-# #TODO: functies voor printen treestructuur, printen zonder versimpeling.
-
-# print(Expression.fromString('1+0'))
-# print(Expression.fromString('(1+0)'))
-# print(Expression.fromString('(0+1)*2')) 
-# print(Expression.fromString('1*2'))
-# print(Expression.fromString('(1*1)+0'))
-
-
-
-# # print(expre.evaluate_node({'y':2}))
-# # f=e+e
-# # a=expre.derivative('y')
-# # print(a.evaluate_node({'z':0}))
-# # print(type(a))
-# # print(a)
-# # print(expr.evaluate_node())
-# # x=Constant(0)
-# # y=Constant(3)
-# # print((x+y)*g)
-# # print(NumInt(expre,'z',1,2,0.01))
-# # print(g.primitive('g'))
-# # polynoom = Expression.fromString('2+3*x+5*x**2+x**3')
-# # P=polynoom.primitive('x')
-# # print(P.evaluate_node({'x':1}))
-# # print(P.evaluate_node())
-
-
-# print(0 == str(0))
-
-# #willen we van 0-5 ook -5 maken? En hoe zit dat eigenlijk uberhaupt met min getallen, daar kunnen we niet echt mee rekenen volgens mij? ff testen.
-
-# # a = Expression.fromString('-3+5')
-
-# print(Expression.fromString('3/(5*5)'))
-# print(type(Expression.fromString('3/(5*5)')))
-
-# #uhm ik snap even niet waarom hij niks invult enzo, dus misschien moeten we hier morgen samen maar naar kijken ;)
-# #0+0 gaat nog niet goed ergens....??
-# a = Expression.fromString('x+1')
-# print(a.primitive('x'))
-# # b = a + a*a
-# # print(b.derivative())
-# # print(b)
-
-printoptie = 'simplify'
-
-expr = Expression.fromString('((3+0)*6+7)')
-print(TestFundThmOfCalculus(expr,'x'))
-print(expr.derivative())
-print(expr)
-print(expr.tree())
-print(expr.simplify())
-
-
-# expres = Expression.fromString('x**x+2')
-# print(expres.primitive('x'))
-a=Expression.fromString('4/4')
-print(a.simplify())
-
-expres = Expression.fromString('x**x+22')
-print(expres.derivative('x'))
-#print(expres.primitive('x'))
-
-print(a)
