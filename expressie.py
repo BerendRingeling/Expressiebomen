@@ -440,6 +440,8 @@ class ExpNode(BinaryNode):
             return self.rhs*(self.lhs**(self.rhs-Constant(1)))
         if type(self.lhs) == Constant and type(self.rhs) == Variable:
             return Constant(math.log(self.lhs.value))*self
+        else:
+            raise ValueError('Sorry, We did not add the logarithm function so we can not differentiate this.')
         
         
     def primitive(self,variable):
@@ -569,7 +571,8 @@ print(expr.simplify())
 a=Expression.fromString('4/4')
 print(a.simplify())
 
-expres = Expression.fromString('x**x')
+expres = Expression.fromString('x**x+22')
+print(expres.derivative('x'))
 #print(expres.primitive('x'))
 
 print(a)
